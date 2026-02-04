@@ -12,9 +12,10 @@
   "app": {
     "windows": [
       {
-        "title": "cardiopc",
-        "width": 800,
-        "height": 600
+        "title": "CARDIO-EBOGO",
+        "width": 1000,
+        "height": 800,
+        "decorations": false
       }
     ],
     "security": {
@@ -23,6 +24,7 @@
   },
   "bundle": {
     "active": true,
+    "createUpdaterArtifacts": true,
     "targets": "all",
     "icon": [
       "icons/32x32.png",
@@ -30,6 +32,49 @@
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ]
+    ],
+    "windows": {
+      "webviewInstallMode": {
+        "type": "offlineInstaller",
+        "silent": true
+      },
+      "allowDowngrades": false,
+      "wix": {
+        "language": "en-US",
+        "template": null,
+        "fragmentPaths": [],
+        "componentRefs": [],
+        "componentGroupRefs": [],
+        "featureRefs": [],
+        "featureGroupRefs": [],
+        "mergeRefs": [],
+        "enableElevatedUpdateTask": true,
+        "bannerPath": null,
+        "dialogImagePath": null
+      },
+      "nsis": {
+        "template": null,
+        "languages": [
+          "English"
+        ],
+        "displayLanguageSelector": false,
+        "compression": "lzma",
+        "installMode": "perMachine",
+        "installerIcon": null,
+        "headerImage": null,
+        "sidebarImage": null,
+        "installerHooks": null,
+        "startMenuFolder": "CardioMed",
+        "minimumWebview2Version": null
+      }
+    }
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDQ3OEMxOTI2N0U2MTQ0MTUKUldRVlJHRitKaG1NUjh2UmJ4TGFtUTQ3SkhudmNRaUg5S1Iza3lVWERLWjZ0TWRsQmp3ZkxHb1QK",
+      "endpoints": [
+        "https://github.com/voukengdongmofrankysteve/CardioMetPc/releases/latest/download/latest.json"
+      ]
+    }
   }
 }
