@@ -131,7 +131,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
                                         color={activity.type === 'Consultation' ? "bg-[#42f0d3]/10 text-[#42f0d3]" : "bg-blue-50 dark:bg-blue-900/20 text-blue-500"}
                                         icon={activity.type === 'Consultation' ? "check_circle" : "person_add"}
                                         title={`${activity.type === 'Consultation' ? 'Consultation' : 'Nouveau Patient'} - <strong>${activity.patient_name}</strong>`}
-                                        time={moment(activity.created_at).fromNow()}
+                                        time={activity.created_at ? moment(activity.created_at, 'YYYY-MM-DD HH:mm:ss.S Z').format('YYYY-MM-DD [à] HH:mm') : 'N/A'}
                                         location={activity.type === 'Consultation' ? (activity.details || 'Cardiologie') : 'Réception'}
                                     />
                                 ))
@@ -151,6 +151,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
                                 <thead className="bg-[#f6f8f8] dark:bg-white/5 text-[11px] uppercase tracking-wider text-[#4c9a8d] font-bold">
                                     <tr>
                                         <th className="px-6 py-3">Patient</th>
+                                        <th className="px-6 py-3">Date</th>
                                         <th className="px-6 py-3">Heure</th>
                                         <th className="px-6 py-3">Type</th>
                                         <th className="px-6 py-3 text-right">Action</th>
@@ -161,6 +162,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
                                         nextAppointments.map((apt) => (
                                             <tr key={apt.id}>
                                                 <td className="px-6 py-4 font-bold text-[#0d1b19] dark:text-white">{apt.patient_name}</td>
+                                                <td className="px-6 py-4 text-[#4c9a8d] font-medium">{apt.appointment_date}</td>
                                                 <td className="px-6 py-4 text-[#4c9a8d] font-medium">{apt.appointment_time}</td>
                                                 <td className="px-6 py-4">
                                                     <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${apt.type === 'Follow-up'

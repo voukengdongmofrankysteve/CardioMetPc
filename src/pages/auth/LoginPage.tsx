@@ -23,6 +23,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
         try {
             const user = await DatabaseService.login(username, password);
             if (user) {
+                localStorage.setItem('cardio_user', JSON.stringify(user));
                 onLogin();
             } else {
                 setError('Utilisateur ou mot de passe incorrect.');
@@ -36,16 +37,16 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
     };
 
     return (
-        <div className="flex-1 flex flex-col items-center justify-center p-6 bg-[#f6f8f8] dark:bg-[#101f22]">
+        <div className="flex-1 flex flex-col items-center justify-center p-6 bg-[var(--color-bg-main)] dark:bg-[var(--color-dark-bg-main)]">
             <Card
                 className="max-w-[480px]"
-                title="CardioMed "
+                title="CardioMed"
                 subtitle="Portail de Gestion Cardiologique Sécurisé"
                 headerIcon="cardiology"
             >
                 <form onSubmit={handleLogin} className="space-y-6">
                     {error && (
-                        <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-xs font-bold text-center animate-in fade-in zoom-in duration-300">
+                        <div className="p-3 bg-[var(--color-danger)]/10 border border-[var(--color-danger)]/20 rounded-xl text-[var(--color-danger)] text-xs font-bold text-center animate-in fade-in zoom-in duration-300">
                             {error}
                         </div>
                     )}
@@ -74,13 +75,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                         <label className="flex items-center gap-2 cursor-pointer group">
                             <input
                                 type="checkbox"
-                                className="rounded border-[#cfe3e7] dark:border-white/10 text-[#13c8ec] focus:ring-[#13c8ec] size-4 accent-[#13c8ec]"
+                                className="rounded border-[var(--color-border)] dark:border-white/10 text-[var(--color-primary)] focus:ring-[var(--color-primary)] size-4 accent-[var(--color-primary)]"
                             />
-                            <span className="text-[#4c8d9a] dark:text-gray-400 text-sm group-hover:text-[#13c8ec] transition-colors">
+                            <span className="text-[var(--color-text-muted)] dark:text-gray-400 text-sm group-hover:text-[var(--color-primary)] transition-colors">
                                 Se souvenir de moi
                             </span>
                         </label>
-                        <a href="#" className="text-[#13c8ec] hover:underline text-sm font-semibold">
+                        <a href="#" className="text-[var(--color-primary)] hover:underline text-sm font-semibold">
                             Mot de passe oublié ?
                         </a>
                     </div>
@@ -94,14 +95,14 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                         Connexion Sécurisée
                     </Button>
 
-                    <div className="flex flex-col items-center gap-4 pt-4 border-t border-[#f0f4f5] dark:border-white/5">
-                        <div className="flex items-center gap-2 bg-[#f0f9fa] dark:bg-[#13c8ec]/5 px-4 py-1.5 rounded-full border border-[#13c8ec]/20">
-                            <span className="material-symbols-outlined text-[#13c8ec] text-sm font-bold">verified_user</span>
-                            <span className="text-[#13c8ec] text-[10px] font-bold tracking-widest uppercase">
+                    <div className="flex flex-col items-center gap-4 pt-4 border-t border-[var(--color-border)] dark:border-white/5">
+                        <div className="flex items-center gap-2 bg-[var(--color-primary-light)] dark:bg-[var(--color-primary)]/5 px-4 py-1.5 rounded-full border border-[var(--color-primary)]/20">
+                            <span className="material-symbols-outlined text-[var(--color-primary)] text-sm font-bold">verified_user</span>
+                            <span className="text-[var(--color-primary)] text-[10px] font-bold tracking-widest uppercase">
                                 Connexion Chiffrée
                             </span>
                         </div>
-                        <p className="text-[11px] text-[#4c8d9a] dark:text-gray-500 text-center leading-relaxed">
+                        <p className="text-[11px] text-[var(--color-text-muted)] dark:text-gray-500 text-center leading-relaxed">
                             Personnel médical autorisé uniquement. <br />
                             L'accès au système est enregistré et surveillé pour la sécurité.
                         </p>
@@ -109,11 +110,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                 </form>
             </Card>
 
-            <div className="mt-8 text-center text-[#4c8d9a] dark:text-gray-500 text-[10px] space-y-1">
-                <p>© 2024 CardioMed . CARDIO-EBOGO v2.4.0</p>
+            <div className="mt-8 text-center text-[var(--color-text-muted)] dark:text-gray-500 text-[10px] space-y-1">
+                <p>© 2024 CardioMed. CARDIOMED v2.4.0</p>
             </div>
 
-            <div className="fixed bottom-0 left-0 w-full h-1 bg-gradient-to-r from-[#13c8ec]/10 via-[#13c8ec] to-[#13c8ec]/10"></div>
+            <div className="fixed bottom-0 left-0 w-full h-1 bg-gradient-to-r from-[var(--color-primary)]/10 via-[var(--color-primary)] to-[var(--color-primary)]/10"></div>
         </div>
     );
 };

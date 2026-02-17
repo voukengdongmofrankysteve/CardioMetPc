@@ -57,6 +57,14 @@ const App: React.FC = () => {
     const [releaseNotes, setReleaseNotes] = useState('');
     const [updatePriority, setUpdatePriority] = useState(false);
 
+    // Check for persisted login
+    useEffect(() => {
+        const storedUser = localStorage.getItem('cardio_user');
+        if (storedUser) {
+            setIsLoggedIn(true);
+        }
+    }, []);
+
     // Check version on mount and whenever login status or page changes
     useEffect(() => {
         checkVersion();
@@ -97,6 +105,12 @@ const App: React.FC = () => {
         }
     };
 
+    const handleLogout = () => {
+        localStorage.removeItem('cardio_user');
+        setIsLoggedIn(false);
+        setCurrentPage('dashboard'); // Reset page
+    };
+
     if (!isLoggedIn) {
         return (
             <div className="flex flex-col h-screen overflow-hidden bg-white dark:bg-[#101f22]">
@@ -117,7 +131,10 @@ const App: React.FC = () => {
     const renderPage = () => {
         switch (currentPage) {
             case 'dashboard':
-                return <DashboardPage onNavigate={(page: string) => setCurrentPage(page as any)} />;
+                return <DashboardPage onNavigate={(page: string) => {
+                    if (page === 'new-patient') setSelectedPatientId(null);
+                    setCurrentPage(page as any);
+                }} />;
             case 'appointments':
                 return <AppointmentsPage
                     onViewDetails={(id) => {
@@ -134,7 +151,10 @@ const App: React.FC = () => {
                 );
             case 'patients':
                 return <PatientPage
-                    onAddPatient={() => setCurrentPage('new-patient')}
+                    onAddPatient={() => {
+                        setSelectedPatientId(null);
+                        setCurrentPage('new-patient');
+                    }}
                     onStartConsultation={() => setCurrentPage('new-consultation')}
                     onViewDetails={(id) => {
                         setSelectedPatientId(id);
@@ -153,7 +173,17 @@ const App: React.FC = () => {
                     onArchivePatient={(_id) => setCurrentPage('archives')}
                 />;
             case 'new-patient':
-                return <NewPatientPage onBack={() => setCurrentPage('patients')} onCancel={() => setCurrentPage('patients')} />;
+                return <NewPatientPage
+                    patientId={selectedPatientId || undefined}
+                    onBack={() => {
+                        setSelectedPatientId(null);
+                        setCurrentPage('patients');
+                    }}
+                    onCancel={() => {
+                        setSelectedPatientId(null);
+                        setCurrentPage('patients');
+                    }}
+                />;
             case 'patient-details':
                 return <PatientDetailsPage
                     patientId={selectedPatientId || ''}
@@ -185,13 +215,21 @@ const App: React.FC = () => {
                 return <ConsultationDetailsPage
                     consultationId={selectedConsultationId || undefined}
                     onBack={() => setCurrentPage('consultations')}
+                    onEditPatient={(id) => {
+                        setSelectedPatientId(id);
+                        setCurrentPage('new-patient');
+                    }}
                 />;
             case 'prescriptions':
                 return <PrescriptionPage />;
             case 'prescription-templates':
                 return <PrescriptionTemplatesPage />;
             case 'archives':
-                return <ArchivePage />;
+                return <ArchivePage onViewExam={(id, patientId) => {
+                    setSelectedExamId(id);
+                    setSelectedPatientId(patientId);
+                    setCurrentPage('exam-details');
+                }} />;
             case 'settings':
                 return <SettingsPage />;
             case 'exam-details':
@@ -212,16 +250,23 @@ const App: React.FC = () => {
                     }}
                 />;
             default:
-                return <DashboardPage onNavigate={(page: string) => setCurrentPage(page as any)} />;
+                return <DashboardPage onNavigate={(page: string) => {
+                    if (page === 'new-patient') setSelectedPatientId(null);
+                    setCurrentPage(page as any);
+                }} />;
         }
     };
 
     return (
-        <div className="flex flex-col h-screen overflow-hidden bg-white dark:bg-[#101f22]">
-            <TitleBar />
-            <div className="flex flex-1 overflow-hidden">
-                <Sidebar activePage={currentPage} onPageChange={setCurrentPage} />
-                <main className="flex-1 overflow-y-auto bg-[#f6f8f8] dark:bg-[#101f22]">
+        <div className="flex flex-col h-screen overflow-hidden bg-bg-main dark:bg-dark-bg-main font-sans text-text-main dark:text-dark-text-main transition-colors duration-200 print:h-auto print:overflow-visible">
+            <div className="print:hidden">
+                <TitleBar />
+            </div>
+            <div className="flex flex-1 overflow-hidden print:overflow-visible print:h-auto">
+                <div className="print:hidden">
+                    <Sidebar activePage={currentPage} onPageChange={setCurrentPage} onLogout={handleLogout} />
+                </div>
+                <main className="flex-1 overflow-y-auto bg-bg-main dark:bg-dark-bg-main p-6 print:p-0 print:overflow-visible print:bg-white">
                     {renderPage()}
                 </main>
             </div>

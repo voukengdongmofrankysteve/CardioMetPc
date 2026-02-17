@@ -6,7 +6,7 @@ please base on nthis information please create a complete descktop app for this 
 
 FULL CURSOR MASTER PRD
 
-Project: CARDIO-EBOGO
+Project: CARDIOMED
 
 Organization: CardioMed 
 
@@ -337,7 +337,7 @@ The system is complete when:
 
 ✅ All modules functional ✅ Secure login ✅ PDF exports work ✅ Scores auto-calc correctly ✅ ECG/ETT stored securely
 
-CAHIER DES CHARGES OFFICIEL LOGICIEL DE CARDIOLOGIE CardioMed  Nom du logiciel : CARDIO-EBOGO Structure : CardioMed  Spécialité : Cardiologie OBJECTIF GÉNÉRAL Développer un logiciel médical sécurisé permettant la gestion complète des consultations cardiologiques : dossier patient, consultation structurée, scores cardiologiques automatiques, ordonnances, ECG, ETT et comptes rendus. MODULES FONCTIONNELS 1. Authentification sécurisée et gestion des utilisateurs 2. Dossier patient informatisé 3. Consultation cardiologique guidée 4. Scores cardiologiques automatiques (CHA2DS2-VASc, HAS-BLED, SCORE CV, NYHA) 5. Ordonnances intelligentes 6. Génération automatique de documents PDF/Word 7. Archivage ECG et ETT CONTRAINTES TECHNIQUES - Application web sécurisée - Base de données chiffrée - Utilisation PC et tablette - Sauvegarde automatique LIVRABLES ATTENDUS - Application fonctionnelle - Code source - Documentation utilisateur
+CAHIER DES CHARGES OFFICIEL LOGICIEL DE CARDIOLOGIE CardioMed  Nom du logiciel : CARDIOMED Structure : CardioMed  Spécialité : Cardiologie OBJECTIF GÉNÉRAL Développer un logiciel médical sécurisé permettant la gestion complète des consultations cardiologiques : dossier patient, consultation structurée, scores cardiologiques automatiques, ordonnances, ECG, ETT et comptes rendus. MODULES FONCTIONNELS 1. Authentification sécurisée et gestion des utilisateurs 2. Dossier patient informatisé 3. Consultation cardiologique guidée 4. Scores cardiologiques automatiques (CHA2DS2-VASc, HAS-BLED, SCORE CV, NYHA) 5. Ordonnances intelligentes 6. Génération automatique de documents PDF/Word 7. Archivage ECG et ETT CONTRAINTES TECHNIQUES - Application web sécurisée - Base de données chiffrée - Utilisation PC et tablette - Sauvegarde automatique LIVRABLES ATTENDUS - Application fonctionnelle - Code source - Documentation utilisateur
 
 please usea more moderne and simple color
 

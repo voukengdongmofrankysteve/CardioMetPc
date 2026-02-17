@@ -17,14 +17,14 @@ interface Patient {
 
 const RiskBadge: React.FC<{ level: 'Low' | 'Medium' | 'High' }> = ({ level }) => {
     const styles = {
-        Low: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-        Medium: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
-        High: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+        Low: 'bg-[var(--color-success)]/10 text-[var(--color-success)]',
+        Medium: 'bg-[var(--color-warning)]/10 text-[var(--color-warning)]',
+        High: 'bg-[var(--color-danger)]/10 text-[var(--color-danger)]',
     };
     const dotColors = {
-        Low: 'bg-green-500',
-        Medium: 'bg-orange-500',
-        High: 'bg-red-500',
+        Low: 'bg-[var(--color-success)]',
+        Medium: 'bg-[var(--color-warning)]',
+        High: 'bg-[var(--color-danger)]',
     };
     return (
         <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${styles[level]}`}>
@@ -70,7 +70,7 @@ export const PatientPage: React.FC<PatientPageProps> = ({
                 gender: p.gender,
                 age: p.age,
                 phone: p.phone,
-                lastVisit: p.created_at ? moment(p.created_at).format('DD/MM/YYYY') : 'N/A',
+                lastVisit: p.created_at ? moment(p.created_at, 'YYYY-MM-DD HH:mm:ss.S Z').format('DD/MM/YYYY [à] HH:mm') : 'N/A',
                 avatar: p.full_name.split(' ').map((n: string) => n[0]).join('').toUpperCase().substring(0, 2)
             }));
             console.log("formatted", formatted);
@@ -88,25 +88,25 @@ export const PatientPage: React.FC<PatientPageProps> = ({
     }, [search]);
 
     return (
-        <div className="flex-1 overflow-y-auto p-8 bg-[#f6f8f8] dark:bg-[#10221f] text-left">
+        <div className="flex flex-col h-full text-left">
             {/* Page Heading */}
             <div className="flex flex-wrap items-end justify-between gap-4 mb-8">
                 <div className="flex flex-col gap-1">
-                    <h1 className="text-[#0d1b19] dark:text-white text-4xl font-black leading-tight tracking-tight">Répertoire des Patients</h1>
-                    <p className="text-[#4c9a8d] text-base font-medium">Gérez {patients.length} dossiers de patients cardiovasculaires</p>
+                    <h1 className="text-[var(--color-text-main)] dark:text-white text-4xl font-black leading-tight tracking-tight">Répertoire des Patients</h1>
+                    <p className="text-[var(--color-text-muted)] text-base font-medium">Gérez {patients.length} dossiers de patients cardiovasculaires</p>
                 </div>
-                <Button icon="add" className="h-12 px-6 bg-primary text-[#0d1b19] font-black uppercase tracking-wider" onClick={onAddPatient}>
+                <Button icon="add" className="h-12 px-6 bg-[var(--color-primary)] text-white font-black uppercase tracking-wider" onClick={onAddPatient}>
                     Ajouter un Patient
                 </Button>
             </div>
 
             {/* Search & Filters */}
-            <div className="bg-white dark:bg-[#152a26] rounded-2xl p-4 shadow-sm border border-[#e7f3f1] dark:border-[#1e3a36] mb-6 flex flex-col md:flex-row gap-4">
+            <div className="bg-[var(--color-bg-surface)] dark:bg-[var(--color-dark-bg-surface)] rounded-2xl p-4 shadow-sm border border-[var(--color-border)] dark:border-[var(--color-dark-border)] mb-6 flex flex-col md:flex-row gap-4">
                 <div className="flex-1">
                     <div className="relative group">
-                        <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#4c9a8d]">search</span>
+                        <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]">search</span>
                         <input
-                            className="w-full h-12 pl-10 pr-4 bg-[#f6f8f8] dark:bg-[#10221f] border-none rounded-xl focus:ring-2 focus:ring-primary/20 text-[#0d1b19] dark:text-white font-bold placeholder:text-[#4c9a8d]/50 placeholder:font-medium"
+                            className="w-full h-12 pl-10 pr-4 bg-[var(--color-bg-main)] dark:bg-[var(--color-dark-bg-main)] border-none rounded-xl focus:ring-2 focus:ring-[var(--color-primary)]/20 text-[var(--color-text-main)] dark:text-white font-bold placeholder:text-[var(--color-text-muted)]/50 placeholder:font-medium"
                             placeholder="Rechercher par nom, ID patient, ou téléphone..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
@@ -114,7 +114,7 @@ export const PatientPage: React.FC<PatientPageProps> = ({
                     </div>
                 </div>
                 <div className="flex gap-2">
-                    <button className="flex items-center gap-2 px-4 h-12 rounded-xl bg-white dark:bg-[#152a26] border border-[#e7f3f1] dark:border-[#1e3a36] text-[#0d1b19] dark:text-white text-sm font-bold hover:bg-[#f6f8f8] dark:hover:bg-white/5 transition-colors">
+                    <button className="flex items-center gap-2 px-4 h-12 rounded-xl bg-[var(--color-bg-surface)] dark:bg-[var(--color-dark-bg-surface)] border border-[var(--color-border)] dark:border-[var(--color-dark-border)] text-[var(--color-text-main)] dark:text-white text-sm font-bold hover:bg-[var(--color-bg-main)] dark:hover:bg-white/5 transition-colors">
                         <span className="material-symbols-outlined text-lg">filter_list</span>
                         Filtres
                     </button>
@@ -122,50 +122,52 @@ export const PatientPage: React.FC<PatientPageProps> = ({
             </div>
 
             {/* Data Table */}
-            <div className="bg-white dark:bg-[#152a26] rounded-2xl shadow-sm border border-[#e7f3f1] dark:border-[#1e3a36] overflow-hidden">
-                <div className="overflow-x-auto">
+            <div className="bg-[var(--color-bg-surface)] dark:bg-[var(--color-dark-bg-surface)] rounded-2xl shadow-sm border border-[var(--color-border)] dark:border-[var(--color-dark-border)] overflow-hidden flex-1 flex flex-col min-h-0">
+                <div className="flex-1 overflow-auto relative">
                     {isLoading ? (
                         <div className="flex flex-col items-center justify-center py-20 gap-4">
-                            <div className="size-12 rounded-full border-4 border-primary/20 border-t-primary animate-spin"></div>
-                            <p className="text-xs font-black text-[#4c9a8d] uppercase tracking-widest">Chargement des données...</p>
+                            <div className="size-12 rounded-full border-4 border-[var(--color-primary)]/20 border-t-[var(--color-primary)] animate-spin"></div>
+                            <p className="text-xs font-black text-[var(--color-text-muted)] uppercase tracking-widest">Chargement des données...</p>
                         </div>
                     ) : (
-                        <table className="w-full text-left border-collapse">
-                            <thead>
-                                <tr className="bg-[#f6f8f8] dark:bg-white/5 border-b border-[#e7f3f1] dark:border-[#1e3a36]">
-                                    <th className="px-6 py-4 text-[#4c9a8d] text-[10px] font-black uppercase tracking-widest">Nom du Patient</th>
-                                    <th className="px-6 py-4 text-[#4c9a8d] text-[10px] font-black uppercase tracking-widest">Genre</th>
-                                    <th className="px-6 py-4 text-[#4c9a8d] text-[10px] font-black uppercase tracking-widest">ID Patient</th>
-                                    <th className="px-6 py-4 text-[#4c9a8d] text-[10px] font-black uppercase tracking-widest">Dernière Visite</th>
-                                    <th className="px-6 py-4 text-[#4c9a8d] text-[10px] font-black uppercase tracking-widest text-center">Statut</th>
-                                    <th className="px-6 py-4 text-[#4c9a8d] text-[10px] font-black uppercase tracking-widest text-right">Actions</th>
+                        <table className="w-full text-left border-collapse relative">
+                            <thead className="sticky top-0 z-10 bg-[var(--color-bg-surface)] dark:bg-[var(--color-dark-bg-surface)] shadow-sm">
+                                <tr className="border-b border-[var(--color-border)] dark:border-[var(--color-dark-border)]">
+                                    <th className="px-6 py-4 text-[var(--color-text-muted)] text-[10px] font-black uppercase tracking-widest">Nom du Patient</th>
+                                    <th className="px-6 py-4 text-[var(--color-text-muted)] text-[10px] font-black uppercase tracking-widest">Genre</th>
+                                    <th className="px-6 py-4 text-[var(--color-text-muted)] text-[10px] font-black uppercase tracking-widest">ID Patient</th>
+                                    <th className="px-6 py-4 text-[var(--color-text-muted)] text-[10px] font-black uppercase tracking-widest">Dernière Visite</th>
+                                    <th className="px-6 py-4 text-[var(--color-text-muted)] text-[10px] font-black uppercase tracking-widest text-center">Statut</th>
+                                    <th className="px-6 py-4 text-[var(--color-text-muted)] text-[10px] font-black uppercase tracking-widest text-right">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-[#e7f3f1] dark:divide-[#1e3a36]">
+                            <tbody className="divide-y divide-[var(--color-border)] dark:divide-[var(--color-dark-border)]">
                                 {patients.map((patient) => (
-                                    <tr key={patient.db_id} className="hover:bg-[#f6f8f8] dark:hover:bg-white/5 transition-colors group">
+                                    <tr key={patient.db_id} className="hover:bg-[var(--color-bg-main)] dark:hover:bg-white/5 transition-colors group">
                                         <td className="px-6 py-4 text-left">
                                             <div className="flex items-center gap-3">
-                                                <div className={`size-10 rounded-xl flex items-center justify-center font-black text-xs border-2 shadow-sm ${patient.gender === 'Male' ? 'bg-blue-50 text-blue-500 border-blue-100/50' : 'bg-pink-50 text-pink-500 border-pink-100/50'
+                                                <div className={`size-10 rounded-xl flex items-center justify-center font-black text-xs border-2 shadow-sm ${patient.gender === 'Male'
+                                                    ? 'bg-[var(--color-info)]/10 text-[var(--color-info)] border-[var(--color-info)]/20'
+                                                    : 'bg-[var(--color-accent)]/10 text-[var(--color-accent)] border-[var(--color-accent)]/20'
                                                     }`}>
                                                     {patient.avatar}
                                                 </div>
                                                 <div>
-                                                    <div className="text-[#0d1b19] dark:text-white font-bold text-base">{patient.name}</div>
-                                                    <div className="text-[#4c9a8d] text-xs font-semibold">{patient.email}</div>
+                                                    <div className="text-[var(--color-text-main)] dark:text-white font-bold text-base">{patient.name}</div>
+                                                    <div className="text-[var(--color-text-muted)] text-xs font-semibold">{patient.email}</div>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4 text-[#0d1b19] dark:text-[#4c9a8d] text-sm font-bold">{patient.gender}</td>
-                                        <td className="px-6 py-4 text-[#4c9a8d] font-mono text-xs font-bold">{patient.id}</td>
-                                        <td className="px-6 py-4 text-[#0d1b19] dark:text-[#4c9a8d] text-sm font-bold">{patient.lastVisit}</td>
+                                        <td className="px-6 py-4 text-[var(--color-text-main)] dark:text-[var(--color-text-muted)] text-sm font-bold">{patient.gender}</td>
+                                        <td className="px-6 py-4 text-[var(--color-text-muted)] font-mono text-xs font-bold">{patient.id}</td>
+                                        <td className="px-6 py-4 text-[var(--color-text-main)] dark:text-[var(--color-text-muted)] text-sm font-bold">{patient.lastVisit}</td>
                                         <td className="px-6 py-4 text-center">
                                             <RiskBadge level="Low" />
                                         </td>
                                         <td className="px-6 py-4 text-right relative">
                                             <button
                                                 onClick={() => setActiveMenuId(activeMenuId === patient.id ? null : patient.id)}
-                                                className="text-[#4c9a8d] hover:text-primary transition-colors hover:scale-110"
+                                                className="text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors hover:scale-110"
                                             >
                                                 <span className="material-symbols-outlined font-black">more_horiz</span>
                                             </button>
@@ -176,41 +178,44 @@ export const PatientPage: React.FC<PatientPageProps> = ({
                                                         className="fixed inset-0 z-[100]"
                                                         onClick={() => setActiveMenuId(null)}
                                                     ></div>
-                                                    <div className="absolute right-6 top-12 w-64 bg-white dark:bg-[#152a26] rounded-2xl shadow-2xl border border-[#e7f3f1] dark:border-[#1e3a36] py-3 z-[110] overflow-hidden animate-in fade-in zoom-in duration-200 text-left">
+                                                    <div className="absolute right-8 top-8 w-56 bg-[var(--color-bg-surface)] dark:bg-[var(--color-dark-bg-surface)] rounded-lg shadow-lg border border-[var(--color-border)] dark:border-[var(--color-dark-border)] py-1.5 z-[110] overflow-hidden animate-in fade-in zoom-in-95 duration-100 text-left origin-top-right ring-1 ring-black/5">
+                                                        <div className="px-3 py-2 text-[10px] uppercase font-bold text-[var(--color-text-muted)] tracking-wider">
+                                                            Actions Rapides
+                                                        </div>
                                                         <button
                                                             onClick={() => onStartConsultation()}
-                                                            className="w-full px-5 py-3 flex items-center gap-4 text-sm font-black text-[#0d1b19] dark:text-white uppercase tracking-tight hover:bg-[#42f0d3]/10 hover:text-primary transition-all"
+                                                            className="w-full px-4 py-2 flex items-center gap-3 text-sm font-medium text-[var(--color-text-main)] dark:text-white hover:bg-[var(--color-bg-main)] dark:hover:bg-white/5 transition-colors"
                                                         >
-                                                            <span className="material-symbols-outlined text-lg">add_circle</span>
+                                                            <span className="material-symbols-outlined text-[18px] text-[var(--color-text-muted)]">add_circle</span>
                                                             Nouvelle Consultation
                                                         </button>
                                                         <button
                                                             onClick={() => onViewDetails(patient.db_id.toString())}
-                                                            className="w-full px-5 py-3 flex items-center gap-4 text-sm font-black text-[#0d1b19] dark:text-white uppercase tracking-tight hover:bg-[#42f0d3]/10 hover:text-primary transition-all"
+                                                            className="w-full px-4 py-2 flex items-center gap-3 text-sm font-medium text-[var(--color-text-main)] dark:text-white hover:bg-[var(--color-bg-main)] dark:hover:bg-white/5 transition-colors"
                                                         >
-                                                            <span className="material-symbols-outlined text-lg">visibility</span>
+                                                            <span className="material-symbols-outlined text-[18px] text-[var(--color-text-muted)]">visibility</span>
                                                             Voir le dossier
                                                         </button>
                                                         <button
                                                             onClick={() => onViewPrescriptions?.(patient.id, patient.db_id, patient.name)}
-                                                            className="w-full px-5 py-3 flex items-center gap-4 text-sm font-black text-[#0d1b19] dark:text-white uppercase tracking-tight hover:bg-[#42f0d3]/10 hover:text-primary transition-all"
+                                                            className="w-full px-4 py-2 flex items-center gap-3 text-sm font-medium text-[var(--color-text-main)] dark:text-white hover:bg-[var(--color-bg-main)] dark:hover:bg-white/5 transition-colors"
                                                         >
-                                                            <span className="material-symbols-outlined text-lg">prescriptions</span>
+                                                            <span className="material-symbols-outlined text-[18px] text-[var(--color-text-muted)]">medication</span>
                                                             Ordonnances
                                                         </button>
                                                         <button
-                                                            onClick={() => onEditPatient(patient.id)}
-                                                            className="w-full px-5 py-3 flex items-center gap-4 text-sm font-black text-[#0d1b19] dark:text-white uppercase tracking-tight hover:bg-[#42f0d3]/10 hover:text-primary transition-all"
+                                                            onClick={() => onEditPatient(patient.db_id.toString())}
+                                                            className="w-full px-4 py-2 flex items-center gap-3 text-sm font-medium text-[var(--color-text-main)] dark:text-white hover:bg-[var(--color-bg-main)] dark:hover:bg-white/5 transition-colors"
                                                         >
-                                                            <span className="material-symbols-outlined text-lg">edit</span>
+                                                            <span className="material-symbols-outlined text-[18px] text-[var(--color-text-muted)]">edit</span>
                                                             Modifier
                                                         </button>
-                                                        <div className="mx-3 my-2 border-t border-[#e7f3f1] dark:border-[#1e3a36]"></div>
+                                                        <div className="my-1.5 border-t border-[var(--color-border)] dark:border-[var(--color-dark-border)]"></div>
                                                         <button
                                                             onClick={() => onArchivePatient(patient.id)}
-                                                            className="w-full px-5 py-3 flex items-center gap-4 text-sm font-black text-red-500 uppercase tracking-tight hover:bg-red-50 dark:hover:bg-red-500/10 transition-all"
+                                                            className="w-full px-4 py-2 flex items-center gap-3 text-sm font-medium text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10 transition-colors"
                                                         >
-                                                            <span className="material-symbols-outlined text-lg">archive</span>
+                                                            <span className="material-symbols-outlined text-[18px]">archive</span>
                                                             Archiver le patient
                                                         </button>
                                                     </div>
@@ -225,14 +230,14 @@ export const PatientPage: React.FC<PatientPageProps> = ({
                 </div>
 
                 {/* Pagination */}
-                <div className="flex items-center justify-between px-6 py-4 bg-[#f6f8f8] dark:bg-white/5 border-t border-[#e7f3f1] dark:border-[#1e3a36]">
-                    <p className="text-xs text-[#4c9a8d] font-bold">Affichage de {patients.length} patients</p>
+                <div className="flex items-center justify-between px-6 py-4 bg-[var(--color-bg-main)] dark:bg-white/5 border-t border-[var(--color-border)] dark:border-[var(--color-dark-border)]">
+                    <p className="text-xs text-[var(--color-text-muted)] font-bold">Affichage de {patients.length} patients</p>
                     <div className="flex items-center gap-1.5">
-                        <button className="flex size-9 items-center justify-center rounded-xl hover:bg-[#42f0d3]/10 hover:text-primary transition-colors text-[#4c9a8d]">
+                        <button className="flex size-9 items-center justify-center rounded-xl hover:bg-[var(--color-primary-light)]/20 hover:text-[var(--color-primary)] transition-colors text-[var(--color-text-muted)]">
                             <span className="material-symbols-outlined text-lg">chevron_left</span>
                         </button>
-                        <button className="text-xs font-black size-9 flex items-center justify-center text-[#0d1b19] rounded-xl bg-primary shadow-sm">1</button>
-                        <button className="flex size-9 items-center justify-center rounded-xl hover:bg-[#42f0d3]/10 hover:text-primary transition-colors text-[#4c9a8d]">
+                        <button className="text-xs font-black size-9 flex items-center justify-center text-white rounded-xl bg-[var(--color-primary)] shadow-sm">1</button>
+                        <button className="flex size-9 items-center justify-center rounded-xl hover:bg-[var(--color-primary-light)]/20 hover:text-[var(--color-primary)] transition-colors text-[var(--color-text-muted)]">
                             <span className="material-symbols-outlined text-lg">chevron_right</span>
                         </button>
                     </div>

@@ -17,13 +17,13 @@ export const Button: React.FC<ButtonProps> = ({
     disabled,
     ...props
 }) => {
-    const baseStyles = 'inline-flex items-center justify-center gap-2 rounded-lg font-bold transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 active:scale-95 disabled:opacity-50 disabled:pointer-events-none';
+    const baseStyles = 'inline-flex items-center justify-center gap-2 rounded-lg font-bold transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 active:scale-95 disabled:opacity-50 disabled:pointer-events-none cursor-pointer';
 
     const variants = {
-        primary: 'bg-[#13c8ec] text-white hover:bg-[#13c8ec]/90 shadow-lg shadow-[#13c8ec]/20 focus:ring-[#13c8ec]/40',
-        secondary: 'bg-[#f0f9fa] text-[#13c8ec] hover:bg-[#e0f2f5] dark:bg-[#13c8ec]/10 dark:text-[#13c8ec]',
-        outline: 'border border-[#cfe3e7] dark:border-white/10 text-[#0d191b] dark:text-white hover:bg-[#f8fbfc] dark:hover:bg-white/5',
-        ghost: 'text-[#4c8d9a] hover:text-[#13c8ec] hover:bg-[#f0f9fa] dark:hover:bg-[#13c8ec]/5',
+        primary: 'bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-hover)] shadow-lg shadow-[var(--color-primary)]/20 focus:ring-[var(--color-primary)]/40',
+        secondary: 'bg-[var(--color-primary-light)] text-[var(--color-primary)] hover:bg-[var(--color-primary-light)]/80 dark:bg-[var(--color-primary)]/10 dark:text-[var(--color-primary)]',
+        outline: 'border border-[var(--color-border)] dark:border-[var(--color-dark-border)] text-[var(--color-text-main)] dark:text-[var(--color-dark-text-main)] hover:bg-[var(--color-bg-main)] dark:hover:bg-white/5',
+        ghost: 'text-[var(--color-text-muted)] hover:text-[var(--color-primary)] hover:bg-[var(--color-primary-light)] dark:hover:bg-[var(--color-primary)]/5',
     };
 
     const sizes = {

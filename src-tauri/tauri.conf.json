@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "CARDIO-EBOGO",
+        "title": "CARDIOMED",
         "width": 1000,
         "height": 800,
         "decorations": false

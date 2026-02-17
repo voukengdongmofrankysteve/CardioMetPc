@@ -7,11 +7,15 @@ CREATE TABLE IF NOT EXISTS users (
     username VARCHAR(255) UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
     full_name VARCHAR(255) NOT NULL,
-    role ENUM('doctor', 'secretary', 'admin') NOT NULL,
+    role ENUM (
+        'doctor',
+        'secretary',
+        'admin'
+    ) NOT NULL,
     email VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- Patients table
 CREATE TABLE IF NOT EXISTS patients (
@@ -19,7 +23,7 @@ CREATE TABLE IF NOT EXISTS patients (
     patient_id VARCHAR(50) UNIQUE NOT NULL,
     full_name VARCHAR(255) NOT NULL,
     date_of_birth DATE,
-    gender ENUM('M', 'F', 'Other'),
+    gender ENUM ('M', 'F', 'Other'),
     phone VARCHAR(50),
     email VARCHAR(255),
     address TEXT,
@@ -27,7 +31,7 @@ CREATE TABLE IF NOT EXISTS patients (
     risk_factors TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- Consultations table
 CREATE TABLE IF NOT EXISTS consultations (
@@ -39,15 +43,15 @@ CREATE TABLE IF NOT EXISTS consultations (
     symptoms TEXT,
     blood_pressure VARCHAR(50),
     heart_rate INT,
-    weight DECIMAL(5,2),
-    height DECIMAL(5,2),
-    bmi DECIMAL(4,2),
+    weight DECIMAL(5, 2),
+    height DECIMAL(5, 2),
+    bmi DECIMAL(4, 2),
     diagnosis TEXT,
     notes TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (patient_db_id) REFERENCES patients(id) ON DELETE CASCADE,
-    FOREIGN KEY (doctor_id) REFERENCES users(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    FOREIGN KEY (patient_db_id) REFERENCES patients (id) ON DELETE CASCADE,
+    FOREIGN KEY (doctor_id) REFERENCES users (id) ON DELETE CASCADE
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- System Settings table
 CREATE TABLE IF NOT EXISTS system_settings (
@@ -56,7 +60,7 @@ CREATE TABLE IF NOT EXISTS system_settings (
     setting_value TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- Password Policy table
 CREATE TABLE IF NOT EXISTS password_policy (
@@ -68,7 +72,7 @@ CREATE TABLE IF NOT EXISTS password_policy (
     expiry_days INT DEFAULT 90,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- Audit Logs table
 CREATE TABLE IF NOT EXISTS audit_logs (
@@ -76,11 +80,11 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     user_id INT,
     action VARCHAR(255) NOT NULL,
     details TEXT,
-    severity ENUM('info', 'warning', 'critical') DEFAULT 'info',
+    severity ENUM ('info', 'warning', 'critical') DEFAULT 'info',
     ip_address VARCHAR(45),
     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE SET NULL
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- Roles Permissions table
 CREATE TABLE IF NOT EXISTS roles_permissions (
@@ -91,18 +95,18 @@ CREATE TABLE IF NOT EXISTS roles_permissions (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE KEY unique_role_permission (role, permission)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- Backup History table
 CREATE TABLE IF NOT EXISTS backup_history (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    type ENUM('Automatic', 'Manual') NOT NULL,
+    type ENUM ('Automatic', 'Manual') NOT NULL,
     filename VARCHAR(255) NOT NULL,
-    size_mb DECIMAL(10,2),
-    status ENUM('Success', 'Failed') NOT NULL,
+    size_mb DECIMAL(10, 2),
+    status ENUM ('Success', 'Failed') NOT NULL,
     error_message TEXT,
     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- Appointments table
 CREATE TABLE IF NOT EXISTS appointments (
@@ -112,12 +116,16 @@ CREATE TABLE IF NOT EXISTS appointments (
     appointment_date TIMESTAMP NOT NULL,
     duration_minutes INT DEFAULT 30,
     reason TEXT,
-    status ENUM('scheduled', 'completed', 'cancelled') DEFAULT 'scheduled',
+    status ENUM (
+        'scheduled',
+        'completed',
+        'cancelled'
+    ) DEFAULT 'scheduled',
     notes TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (patient_db_id) REFERENCES patients(id) ON DELETE CASCADE,
-    FOREIGN KEY (doctor_id) REFERENCES users(id) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    FOREIGN KEY (patient_db_id) REFERENCES patients (id) ON DELETE CASCADE,
+    FOREIGN KEY (doctor_id) REFERENCES users (id) ON DELETE SET NULL
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- Prescriptions table
 CREATE TABLE IF NOT EXISTS prescriptions (
@@ -129,45 +137,132 @@ CREATE TABLE IF NOT EXISTS prescriptions (
     medications TEXT NOT NULL,
     instructions TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (consultation_id) REFERENCES consultations(id) ON DELETE CASCADE,
-    FOREIGN KEY (patient_db_id) REFERENCES patients(id) ON DELETE CASCADE,
-    FOREIGN KEY (doctor_id) REFERENCES users(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    FOREIGN KEY (consultation_id) REFERENCES consultations (id) ON DELETE CASCADE,
+    FOREIGN KEY (patient_db_id) REFERENCES patients (id) ON DELETE CASCADE,
+    FOREIGN KEY (doctor_id) REFERENCES users (id) ON DELETE CASCADE
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- Insert default admin user (password: admin123) - Only if not exists
-INSERT IGNORE INTO users (id, username, password_hash, full_name, role, email)
-VALUES (1, 'admin', 'YWRtaW4xMjM=', 'Administrator', 'admin', 'admin@cardio-ebogo.org');
+INSERT IGNORE INTO users (
+    id,
+    username,
+    password_hash,
+    full_name,
+    role,
+    email
+)
+VALUES (
+        1,
+        'admin',
+        'YWRtaW4xMjM=',
+        'Administrator',
+        'admin',
+        'admin@CARDIOMED.org'
+    );
 
 -- Insert default password policy - Only if not exists
-INSERT IGNORE INTO password_policy (id, min_length, require_uppercase, require_numbers, require_special_chars, expiry_days)
+INSERT IGNORE INTO password_policy (
+    id,
+    min_length,
+    require_uppercase,
+    require_numbers,
+    require_special_chars,
+    expiry_days
+)
 VALUES (1, 8, TRUE, TRUE, TRUE, 90);
 
 -- Insert default system settings - Only if not exists
-INSERT IGNORE INTO system_settings (setting_key, setting_value) VALUES
-('clinicName', 'CardioMed '),
-('clinicAddress', 'Yaoundé, Cameroun'),
-('clinicPhone', '(+237) 6xx-xxx-xxx'),
-('clinicEmail', 'contact@fce-titus.org'),
-('timezone', 'Africa/Douala'),
-('language', 'fr'),
-('dateFormat', 'DD/MM/YYYY'),
-('currency', 'XAF');
+INSERT IGNORE INTO system_settings (setting_key, setting_value)
+VALUES ('clinicName', 'CardioMed '),
+    (
+        'clinicAddress',
+        'Yaoundé, Cameroun'
+    ),
+    (
+        'clinicPhone',
+        '(+237) 6xx-xxx-xxx'
+    ),
+    (
+        'clinicEmail',
+        'contact@fce-titus.org'
+    ),
+    ('timezone', 'Africa/Douala'),
+    ('language', 'fr'),
+    ('dateFormat', 'DD/MM/YYYY'),
+    ('currency', 'XAF');
 
 -- Insert default role permissions - Only if not exists
-INSERT IGNORE INTO roles_permissions (role, permission, allowed) VALUES
--- Doctor permissions
-('doctor', 'view_medical', TRUE),
-('doctor', 'edit_patient', TRUE),
-('doctor', 'manage_prescriptions', TRUE),
-('doctor', 'create_consultations', TRUE),
-('doctor', 'manage_billing', FALSE),
-('doctor', 'staff_management', FALSE),
-('doctor', 'view_analytics', TRUE),
--- Secretary permissions
-('secretary', 'view_medical', FALSE),
-('secretary', 'edit_patient', TRUE),
-('secretary', 'manage_prescriptions', FALSE),
-('secretary', 'create_consultations', TRUE),
-('secretary', 'manage_billing', TRUE),
-('secretary', 'staff_management', FALSE),
-('secretary', 'view_analytics', FALSE);
+INSERT IGNORE INTO roles_permissions (role, permission, allowed)
+VALUES
+    -- Doctor permissions
+    (
+        'doctor',
+        'view_medical',
+        TRUE
+    ),
+    (
+        'doctor',
+        'edit_patient',
+        TRUE
+    ),
+    (
+        'doctor',
+        'manage_prescriptions',
+        TRUE
+    ),
+    (
+        'doctor',
+        'create_consultations',
+        TRUE
+    ),
+    (
+        'doctor',
+        'manage_billing',
+        FALSE
+    ),
+    (
+        'doctor',
+        'staff_management',
+        FALSE
+    ),
+    (
+        'doctor',
+        'view_analytics',
+        TRUE
+    ),
+    -- Secretary permissions
+    (
+        'secretary',
+        'view_medical',
+        FALSE
+    ),
+    (
+        'secretary',
+        'edit_patient',
+        TRUE
+    ),
+    (
+        'secretary',
+        'manage_prescriptions',
+        FALSE
+    ),
+    (
+        'secretary',
+        'create_consultations',
+        TRUE
+    ),
+    (
+        'secretary',
+        'manage_billing',
+        TRUE
+    ),
+    (
+        'secretary',
+        'staff_management',
+        FALSE
+    ),
+    (
+        'secretary',
+        'view_analytics',
+        FALSE
+    );

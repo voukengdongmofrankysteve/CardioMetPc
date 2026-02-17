@@ -62,7 +62,7 @@ pub fn run() {
 
                 -- Insert initial doctor if not exists
                 INSERT IGNORE INTO users (username, password_hash, full_name, role) 
-                VALUES ('admin', 'password123', 'Dr. Ebogo Titus', 'Doctor');
+                VALUES ('admin', 'password123', 'Dr. Cyrille Mbida', 'Doctor');
             ",
             kind: tauri_plugin_sql::MigrationKind::Up,
         },
@@ -331,8 +331,8 @@ pub fn run() {
                        // "mysql://root:51405492fS%40@localhost/cardio_ebogo"
                         "mysql://u111881942_cardio:51405492fSteve%40@82.197.82.156/u111881942_cardio"
                     } else {
+                        //"mysql://root:51405492fS%40@localhost/cardio_ebogo"
                         "mysql://u111881942_cardio:51405492fSteve%40@82.197.82.156/u111881942_cardio"
-                       // "mysql://u111881942_cardio:51405492fSteve%40@82.197.82.156/u111881942_cardio"
                     },
                     migrations,
                 )

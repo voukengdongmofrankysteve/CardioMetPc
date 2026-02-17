@@ -20,19 +20,19 @@ export const Input: React.FC<InputProps> = ({
     return (
         <div className="flex flex-col gap-1.5 w-full">
             {label && (
-                <label className="text-[#0d191b] dark:text-white text-sm font-semibold leading-normal">
+                <label className="text-[var(--color-text-main)] dark:text-[var(--color-dark-text-main)] text-sm font-semibold leading-normal">
                     {label}
                 </label>
             )}
             <div className="relative group">
                 <input
                     className={`
-            flex w-full rounded-lg text-[#0d191b] dark:text-white 
-            border border-[#cfe3e7] dark:border-white/10 
-            bg-[#f8fbfc] dark:bg-[#101f22]/50 
+            flex w-full rounded-lg text-[var(--color-text-main)] dark:text-[var(--color-dark-text-main)]
+            border border-[var(--color-border)] dark:border-[var(--color-dark-border)]
+            bg-[var(--color-bg-surface)] dark:bg-[var(--color-dark-bg-surface)]
             h-12 px-4 text-base font-normal transition-all
-            placeholder:text-[#4c8d9a]
-            focus:outline-none focus:ring-2 focus:ring-[#13c8ec]/20 focus:border-[#13c8ec]
+            placeholder:text-[var(--color-text-muted)]
+            focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)]
             ${icon ? 'pr-12' : ''}
             ${error ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''}
             ${className}
@@ -43,7 +43,7 @@ export const Input: React.FC<InputProps> = ({
                     <div
                         className={`
               absolute right-3 top-1/2 -translate-y-1/2 
-              text-[#4c8d9a] hover:text-[#13c8ec] 
+              text-[var(--color-text-muted)] hover:text-[var(--color-primary)]
               transition-colors flex items-center justify-center
               ${onIconClick ? 'cursor-pointer' : ''}
             `}

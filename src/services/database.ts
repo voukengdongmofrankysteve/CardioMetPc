@@ -1,6 +1,10 @@
 import Database from '@tauri-apps/plugin-sql';
 
+// Remote Connection (Legacy)
 const DB_CONNECTION = 'mysql://u111881942_cardio:51405492fSteve%40@82.197.82.156/u111881942_cardio';
+
+// Local Connection
+//const DB_CONNECTION = 'mysql://root:51405492fS%40@localhost/cardio_ebogo';
 
 export class DatabaseService {
     private static instance: Database | null = null;
@@ -95,6 +99,72 @@ export class DatabaseService {
         }
 
         return patientDbId;
+    }
+
+    static async updatePatient(id: number, data: any): Promise<void> {
+        const db = await this.getDb();
+
+        // Update main patient record
+        const updates: string[] = [];
+        const values: any[] = [];
+
+        const fields = [
+            'full_name', 'gender', 'dob', 'nationality', 'cni',
+            'age', 'weight', 'height', 'phone', 'email', 'address',
+            'ref_doctor', 'insurance', 'insurance_policy'
+        ];
+
+        fields.forEach(field => {
+            if (data[field] !== undefined) {
+                updates.push(`${field} = ?`);
+                values.push(data[field]);
+            }
+        });
+
+        if (data.consent !== undefined) {
+            updates.push('consent = ?');
+            values.push(data.consent ? 1 : 0);
+        }
+
+        if (updates.length > 0) {
+            values.push(id);
+
+            await db.execute(
+                `UPDATE patients SET ${updates.join(', ')} WHERE id = ?`,
+                values
+            );
+        }
+
+        // We also need to update related tables (risk factors, emergency contacts)
+        // This is complex because we need to handle additions/removals.
+        // For simplicity: Delete all and re-insert is often easiest for these small lists.
+
+        // First get DB ID to update related tables
+        const dbId = id;
+
+        // Update Risk Factors
+        if (data.risk_factors) {
+            await db.execute('DELETE FROM risk_factors WHERE patient_db_id = ?', [dbId]);
+            for (const factor of data.risk_factors) {
+                await db.execute(
+                    'INSERT INTO risk_factors (patient_db_id, factor_label) VALUES (?, ?)',
+                    [dbId, factor]
+                );
+            }
+        }
+
+        // Update Emergency Contacts
+        if (data.emergency_contacts) {
+            await db.execute('DELETE FROM emergency_contacts WHERE patient_db_id = ?', [dbId]);
+            for (const contact of data.emergency_contacts) {
+                if (contact.name) {
+                    await db.execute(
+                        'INSERT INTO emergency_contacts (patient_db_id, name, relationship, phone) VALUES (?, ?, ?, ?)',
+                        [dbId, contact.name, contact.relationship, contact.phone]
+                    );
+                }
+            }
+        }
     }
 
     // Search
@@ -237,6 +307,17 @@ export class DatabaseService {
             WHERE c.patient_db_id = ?
             ORDER BY c.created_at DESC
         `, [patientDbId]);
+    }
+
+    static async getAllExams(): Promise<any[]> {
+        const db = await this.getDb();
+        return await db.select<any[]>(`
+            SELECT e.*, c.created_at as date, p.full_name as patient_name, p.patient_id as patient_code
+            FROM ecg_ett_exams e
+            JOIN consultations c ON e.consultation_id = c.id
+            JOIN patients p ON c.patient_db_id = p.id
+            ORDER BY c.created_at DESC
+        `);
     }
 
     static async getExamById(examId: number): Promise<any | null> {

@@ -1,11 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { DatabaseService } from '../../services/database';
+import { generatePrescriptionPDF } from '../../services/prescriptionPDF';
 
 interface ConsultationPageProps {
     patientId?: string; // This is the DB ID (number) or Patient Code (string)
     onBack?: () => void;
     onComplete?: () => void;
     onViewDetails?: (id: string) => void;
+}
+
+interface Prescription {
+    id: number;
+    drug: string;
+    dosage: string;
+    frequency: string;
+    duration: string;
 }
 
 type Step = 1 | 2 | 3 | 4 | 5 | 6 | 7;
@@ -126,10 +135,7 @@ export const ConsultationPage: React.FC<ConsultationPageProps> = ({
     ]);
 
     // Step 6: Traitement State
-    const [prescriptions, setPrescriptions] = useState([
-        { id: 1, drug: 'Ramipril', dosage: '5mg', frequency: '1x/jour', duration: '3 mois' },
-        { id: 2, drug: 'Bisoprolol', dosage: '2.5mg', frequency: '1x/jour', duration: '3 mois' }
-    ]);
+    const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
 
     const handleComplete = async () => {
         if (!validateStep(currentStep)) return;
@@ -246,31 +252,31 @@ export const ConsultationPage: React.FC<ConsultationPageProps> = ({
     };
 
     return (
-        <div className="flex flex-col min-h-screen bg-[#f6f8f8] dark:bg-[#10221f] font-sans text-[#0d1b19] dark:text-white">
+        <div className="flex flex-col min-h-screen bg-[var(--color-bg-main)] dark:bg-[var(--color-dark-bg-main)] font-sans text-[var(--color-text-main)] dark:text-white">
             {/* Header */}
-            <header className="flex items-center justify-between whitespace-nowrap border-b border-solid border-[#e7f3f1] dark:border-[#1e3a36] bg-white dark:bg-[#152a26] px-8 py-3 sticky top-0 z-50 shrink-0">
+            <header className="flex items-center justify-between whitespace-nowrap border-b border-solid border-[var(--color-border)] dark:border-[var(--color-dark-border)] bg-[var(--color-bg-surface)] dark:bg-[var(--color-dark-bg-surface)] px-8 py-3 sticky top-0 z-50 shrink-0">
                 <div className="flex items-center gap-6">
                     <button
                         onClick={onBack}
-                        className="flex items-center text-[#4c9a8d] hover:text-[#42f0d3] transition-colors"
+                        className="flex items-center text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors"
                     >
                         <span className="material-symbols-outlined">arrow_back</span>
                     </button>
                     <div className="flex items-center gap-3">
-                        <div className="size-6 bg-[#42f0d3] rounded-lg flex items-center justify-center">
+                        <div className="size-6 bg-[var(--color-primary)] rounded-lg flex items-center justify-center">
                             <span className="material-symbols-outlined text-white text-base">cardiology</span>
                         </div>
-                        <h2 className="text-[#0d1b19] dark:text-white text-lg font-bold uppercase tracking-tight">CARDIO-EBOGO</h2>
+                        <h2 className="text-[var(--color-text-main)] dark:text-white text-lg font-bold uppercase tracking-tight">CARDIOMED</h2>
                     </div>
-                    <div className="h-6 w-px bg-[#e7f3f1] dark:bg-[#1e3a36]"></div>
-                    <span className="text-xs font-black uppercase tracking-widest text-[#4c9a8d]">Nouvelle Consultation</span>
+                    <div className="h-6 w-px bg-[var(--color-border)] dark:bg-[var(--color-dark-border)]"></div>
+                    <span className="text-xs font-black uppercase tracking-widest text-[var(--color-text-muted)]">Nouvelle Consultation</span>
                 </div>
 
                 <div className="flex items-center gap-3">
-                    <button className="flex items-center justify-center rounded-lg h-10 w-10 bg-[#f6f8f8] dark:bg-white/5 text-[#4c9a8d] hover:bg-primary/10 transition-colors">
+                    <button className="flex items-center justify-center rounded-lg h-10 w-10 bg-[var(--color-bg-main)] dark:bg-white/5 text-[var(--color-text-muted)] hover:bg-[var(--color-primary)]/10 transition-colors">
                         <span className="material-symbols-outlined">notifications</span>
                     </button>
-                    <div className="size-9 rounded-xl bg-primary flex items-center justify-center text-[#0d1b19] font-black border-2 border-white dark:border-[#1e3a36] shadow-sm">
+                    <div className="size-9 rounded-xl bg-[var(--color-primary)] flex items-center justify-center text-[var(--color-text-main)] font-black border-2 border-white dark:border-[var(--color-dark-border)] shadow-sm">
                         DR
                     </div>
                 </div>
@@ -280,34 +286,34 @@ export const ConsultationPage: React.FC<ConsultationPageProps> = ({
                 {/* Form Area */}
                 <div className="flex-1 flex flex-col gap-6 overflow-y-auto no-scrollbar pb-10">
                     {/* Breadcrumb */}
-                    <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-[#4c9a8d] text-left">
-                        <span className="hover:text-primary cursor-pointer" onClick={onBack}>Patients</span>
+                    <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-[var(--color-text-muted)] text-left">
+                        <span className="hover:text-[var(--color-primary)] cursor-pointer" onClick={onBack}>Patients</span>
                         <span className="material-symbols-outlined text-xs">chevron_right</span>
-                        <span className="hover:text-primary cursor-pointer">{patientInfo?.full_name || 'Sélection Patient'}</span>
+                        <span className="hover:text-[var(--color-primary)] cursor-pointer">{patientInfo?.full_name || 'Sélection Patient'}</span>
                         <span className="material-symbols-outlined text-xs">chevron_right</span>
-                        <span className="text-[#0d1b19] dark:text-white">Nouvelle Consultation</span>
+                        <span className="text-[var(--color-text-main)] dark:text-white">Nouvelle Consultation</span>
                     </div>
 
                     {/* Stepper */}
-                    <div className="bg-white dark:bg-[#152a26] rounded-2xl p-6 shadow-sm border border-[#e7f3f1] dark:border-[#1e3a36] shrink-0">
+                    <div className="bg-[var(--color-bg-surface)] dark:bg-[var(--color-dark-bg-surface)] rounded-2xl p-6 shadow-sm border border-[var(--color-border)] dark:border-[var(--color-dark-border)] shrink-0">
                         <div className="relative flex justify-between items-center max-w-4xl mx-auto px-4">
-                            <div className="absolute top-[18px] left-[50px] right-[50px] h-[2px] bg-[#f6f8f8] dark:bg-[#1e3a36] -z-0">
+                            <div className="absolute top-[18px] left-[50px] right-[50px] h-[2px] bg-[var(--color-bg-main)] dark:bg-[var(--color-dark-border)] -z-0">
                                 <div
-                                    className="h-full bg-primary transition-all duration-500 shadow-[0_0_8px_rgba(66,240,211,0.5)]"
+                                    className="h-full bg-[var(--color-primary)] transition-all duration-500 shadow-[0_0_8px_rgba(66,240,211,0.5)]"
                                     style={{ width: `${((currentStep - 1) / 6) * 100}%` }}
                                 ></div>
                             </div>
                             {steps.map((step) => (
                                 <div key={step.id} className={`relative flex flex-col items-center gap-2 z-10 transition-all duration-300 ${currentStep < step.id ? 'opacity-40 scale-90' : 'opacity-100 scale-100'}`}>
                                     <div className={`size-9 rounded-full flex items-center justify-center font-black text-xs transition-all ${currentStep === step.id
-                                        ? 'bg-primary text-[#0d1b19] shadow-[0_0_12px_rgba(66,240,211,0.4)] border-2 border-white'
+                                        ? 'bg-[var(--color-primary)] text-[var(--color-text-main)] shadow-[0_0_12px_rgba(66,240,211,0.4)] border-2 border-white'
                                         : currentStep > step.id
-                                            ? 'bg-primary text-[#0d1b19]'
-                                            : 'bg-white dark:bg-[#1e3a36] border-2 border-[#e7f3f1] dark:border-[#1e3a36] text-[#4c9a8d]'
+                                            ? 'bg-[var(--color-primary)] text-[var(--color-text-main)]'
+                                            : 'bg-[var(--color-bg-surface)] dark:bg-[var(--color-dark-bg-surface)] border-2 border-[var(--color-border)] dark:border-[var(--color-dark-border)] text-[var(--color-text-muted)]'
                                         }`}>
                                         {currentStep > step.id ? <span className="material-symbols-outlined text-sm">check</span> : step.id}
                                     </div>
-                                    <span className={`text-[9px] font-black uppercase tracking-widest ${currentStep === step.id ? 'text-[#0d1b19] dark:text-white' : 'text-[#4c9a8d]'}`}>
+                                    <span className={`text-[9px] font-black uppercase tracking-widest ${currentStep === step.id ? 'text-[var(--color-text-main)] dark:text-white' : 'text-[var(--color-text-muted)]'}`}>
                                         {step.label}
                                     </span>
                                 </div>
@@ -316,13 +322,13 @@ export const ConsultationPage: React.FC<ConsultationPageProps> = ({
                     </div>
 
                     {/* Step Content */}
-                    <div className="bg-white dark:bg-[#152a26] rounded-2xl shadow-md border border-[#e7f3f1] dark:border-[#1e3a36] overflow-hidden flex flex-col text-left">
-                        <div className="p-6 border-b border-[#f6f8f8] dark:border-white/5 flex items-center justify-between bg-[#f8fcfb] dark:bg-white/5">
+                    <div className="bg-[var(--color-bg-surface)] dark:bg-[var(--color-dark-bg-surface)] rounded-2xl shadow-md border border-[var(--color-border)] dark:border-[var(--color-dark-border)] overflow-hidden flex flex-col text-left">
+                        <div className="p-6 border-b border-[var(--color-bg-main)] dark:border-white/5 flex items-center justify-between bg-[var(--color-bg-main)]/50 dark:bg-white/5">
                             <div>
-                                <h3 className="text-xl font-black text-[#0d1b19] dark:text-white uppercase tracking-tight">{steps[currentStep - 1].label}</h3>
-                                <p className="text-[10px] font-black text-[#4c9a8d] uppercase tracking-widest mt-1">Étape {currentStep} : Évaluation clinique et anamnèse</p>
+                                <h3 className="text-xl font-black text-[var(--color-text-main)] dark:text-white uppercase tracking-tight">{steps[currentStep - 1].label}</h3>
+                                <p className="text-[10px] font-black text-[var(--color-text-muted)] uppercase tracking-widest mt-1">Étape {currentStep} : Évaluation clinique et anamnèse</p>
                             </div>
-                            <div className="text-[#4c9a8d] text-[10px] font-black uppercase tracking-widest">Date: 28 Jan 2026</div>
+                            <div className="text-[var(--color-text-muted)] text-[10px] font-black uppercase tracking-widest">Date: {new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
                         </div>
 
                         <div className="p-8 space-y-8 overflow-y-auto no-scrollbar">
@@ -341,16 +347,16 @@ export const ConsultationPage: React.FC<ConsultationPageProps> = ({
                                         </div>
 
                                         <div className="relative group">
-                                            <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-[#4c9a8d] group-focus-within:text-primary transition-colors">search</span>
+                                            <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-[var(--color-text-muted)] group-focus-within:text-[var(--color-primary)] transition-colors">search</span>
                                             <input
-                                                className="w-full h-14 rounded-2xl border-[#e7f3f1] dark:border-[#1e3a36] bg-[#f6f8f8] dark:bg-[#10221f] pl-12 pr-4 text-sm font-bold focus:ring-primary/20 focus:border-primary text-[#0d1b19] dark:text-white transition-all shadow-sm"
+                                                className="w-full h-14 rounded-2xl border-[var(--color-border)] dark:border-[var(--color-dark-border)] bg-[var(--color-bg-main)] dark:bg-[var(--color-dark-bg-main)] pl-12 pr-4 text-sm font-bold focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] text-[var(--color-text-main)] dark:text-white transition-all shadow-sm"
                                                 placeholder="Tapez le nom ou le code ID du patient..."
                                                 value={patientSearch}
                                                 onChange={(e) => handlePatientSearch(e.target.value)}
                                             />
                                             {isSearching && (
                                                 <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                                                    <div className="size-5 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                                                    <div className="size-5 border-2 border-[var(--color-primary)] border-t-transparent rounded-full animate-spin"></div>
                                                 </div>
                                             )}
                                         </div>
@@ -364,33 +370,33 @@ export const ConsultationPage: React.FC<ConsultationPageProps> = ({
                                                             setPatientId(p.id.toString());
                                                             nextStep();
                                                         }}
-                                                        className="w-full flex items-center justify-between p-4 bg-white dark:bg-[#152a26] border border-[#e7f3f1] dark:border-[#1e3a36] rounded-2xl hover:border-primary hover:shadow-lg transition-all text-left group"
+                                                        className="w-full flex items-center justify-between p-4 bg-[var(--color-bg-surface)] dark:bg-[var(--color-dark-bg-surface)] border border-[var(--color-border)] dark:border-[var(--color-dark-border)] rounded-2xl hover:border-[var(--color-primary)] hover:shadow-lg transition-all text-left group"
                                                     >
                                                         <div className="flex items-center gap-4">
-                                                            <div className="size-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-black group-hover:bg-primary group-hover:text-white transition-all">
+                                                            <div className="size-12 rounded-xl bg-[var(--color-primary)]/10 flex items-center justify-center text-[var(--color-primary)] font-black group-hover:bg-[var(--color-primary)] group-hover:text-white transition-all">
                                                                 {p.full_name.split(' ').map((n: string) => n[0]).join('').slice(0, 2)}
                                                             </div>
                                                             <div>
-                                                                <p className="text-sm font-black text-[#0d1b19] dark:text-white">{p.full_name}</p>
-                                                                <p className="text-[10px] font-bold text-[#4c9a8d] uppercase tracking-wide">ID: {p.patient_id} • {p.age} ans • {p.gender}</p>
+                                                                <p className="text-sm font-black text-[var(--color-text-main)] dark:text-white">{p.full_name}</p>
+                                                                <p className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wide">ID: {p.patient_id} • {p.age} ans • {p.gender}</p>
                                                             </div>
                                                         </div>
                                                         <div className="flex items-center gap-2">
-                                                            <span className="text-[10px] font-black uppercase text-primary opacity-0 group-hover:opacity-100 transition-all">Sélectionner</span>
-                                                            <span className="material-symbols-outlined text-primary">chevron_right</span>
+                                                            <span className="text-[10px] font-black uppercase text-[var(--color-primary)] opacity-0 group-hover:opacity-100 transition-all">Sélectionner</span>
+                                                            <span className="material-symbols-outlined text-[var(--color-primary)]">chevron_right</span>
                                                         </div>
                                                     </button>
                                                 ))
                                             ) : patientSearch.length > 1 ? (
-                                                <div className="py-12 text-center bg-[#f6f8f8] dark:bg-white/5 rounded-2xl border-2 border-dashed border-[#e7f3f1] dark:border-[#1e3a36]">
-                                                    <span className="material-symbols-outlined text-4xl text-[#4c9a8d]/30 mb-2">person_off</span>
-                                                    <p className="text-xs font-bold text-[#4c9a8d]">Aucun patient trouvé pour "{patientSearch}"</p>
-                                                    <button className="mt-4 px-6 py-2 bg-primary/10 text-primary rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-primary hover:text-white transition-all">
+                                                <div className="py-12 text-center bg-[var(--color-bg-main)] dark:bg-white/5 rounded-2xl border-2 border-dashed border-[var(--color-border)] dark:border-[var(--color-dark-border)]">
+                                                    <span className="material-symbols-outlined text-4xl text-[var(--color-text-muted)]/30 mb-2">person_off</span>
+                                                    <p className="text-xs font-bold text-[var(--color-text-muted)]">Aucun patient trouvé pour "{patientSearch}"</p>
+                                                    <button className="mt-4 px-6 py-2 bg-[var(--color-primary)]/10 text-[var(--color-primary)] rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[var(--color-primary)] hover:text-white transition-all">
                                                         Créer un nouveau dossier
                                                     </button>
                                                 </div>
                                             ) : (
-                                                <div className="py-20 text-center text-[#4c9a8d]/50">
+                                                <div className="py-20 text-center text-[var(--color-text-muted)]/50">
                                                     <span className="material-symbols-outlined text-6xl mb-4">search_insights</span>
                                                     <p className="text-sm font-bold uppercase tracking-widest">Commencez à taper pour rechercher</p>
                                                 </div>
@@ -409,11 +415,11 @@ export const ConsultationPage: React.FC<ConsultationPageProps> = ({
                                         </div>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             <div className="col-span-full">
-                                                <label className="block text-[10px] font-black uppercase tracking-widest text-[#4c9a8d] mb-2 ml-1">
-                                                    Plainte Principale <span className="text-red-500">*</span>
+                                                <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--color-text-muted)] mb-2 ml-1">
+                                                    Plainte Principale <span className="text-[var(--color-danger)]">*</span>
                                                 </label>
                                                 <textarea
-                                                    className={`w-full rounded-2xl border ${errors.consultationReason ? 'border-red-500 bg-red-50/10' : 'border-[#e7f3f1] dark:border-[#1e3a36]'} bg-[#f6f8f8] dark:bg-[#10221f] p-4 text-sm font-bold focus:ring-primary/20 focus:border-primary transition-all text-[#0d1b19] dark:text-white min-h-[120px] placeholder:text-[#4c9a8d]/30`}
+                                                    className={`w-full rounded-2xl border ${errors.consultationReason ? 'border-[var(--color-danger)] bg-[var(--color-danger)]/10' : 'border-[var(--color-border)] dark:border-[var(--color-dark-border)]'} bg-[var(--color-bg-main)] dark:bg-[var(--color-dark-bg-main)] p-4 text-sm font-bold focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] transition-all text-[var(--color-text-main)] dark:text-white min-h-[120px] placeholder:text-[var(--color-text-muted)]/30`}
                                                     placeholder="Décrivez le motif principal de consultation..."
                                                     value={consultationReason}
                                                     onChange={(e) => {
@@ -421,14 +427,14 @@ export const ConsultationPage: React.FC<ConsultationPageProps> = ({
                                                         if (errors.consultationReason) setErrors(prev => ({ ...prev, consultationReason: '' }));
                                                     }}
                                                 ></textarea>
-                                                {errors.consultationReason && <p className="text-[9px] font-black text-red-500 uppercase mt-1 ml-1">{errors.consultationReason}</p>}
+                                                {errors.consultationReason && <p className="text-[9px] font-black text-[var(--color-danger)] uppercase mt-1 ml-1">{errors.consultationReason}</p>}
                                             </div>
                                             <div>
-                                                <label className="block text-[10px] font-black uppercase tracking-widest text-[#4c9a8d] mb-2 ml-1">
-                                                    Statut Fonctionnel (NYHA) <span className="text-red-500">*</span>
+                                                <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--color-text-muted)] mb-2 ml-1">
+                                                    Statut Fonctionnel (NYHA) <span className="text-[var(--color-danger)]">*</span>
                                                 </label>
                                                 <select
-                                                    className={`w-full h-12 rounded-xl border ${errors.nyha ? 'border-red-500 bg-red-50/10' : 'border-[#e7f3f1] dark:border-[#1e3a36]'} bg-[#f6f8f8] dark:bg-[#10221f] px-4 text-sm font-bold focus:ring-primary/20 focus:border-primary text-[#0d1b19] dark:text-white`}
+                                                    className={`w-full h-12 rounded-xl border ${errors.nyha ? 'border-[var(--color-danger)] bg-[var(--color-danger)]/10' : 'border-[var(--color-border)] dark:border-[var(--color-dark-border)]'} bg-[var(--color-bg-main)] dark:bg-[var(--color-dark-bg-main)] px-4 text-sm font-bold focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] text-[var(--color-text-main)] dark:text-white`}
                                                     value={scores.nyha}
                                                     onChange={(e) => {
                                                         setScores(prev => ({ ...prev, nyha: e.target.value }));
@@ -441,11 +447,11 @@ export const ConsultationPage: React.FC<ConsultationPageProps> = ({
                                                     <option>Classe III - Limitation marquée</option>
                                                     <option>Classe IV - Incapacité à toute activité</option>
                                                 </select>
-                                                {errors.nyha && <p className="text-[9px] font-black text-red-500 uppercase mt-1 ml-1">{errors.nyha}</p>}
+                                                {errors.nyha && <p className="text-[9px] font-black text-[var(--color-danger)] uppercase mt-1 ml-1">{errors.nyha}</p>}
                                             </div>
                                             <div>
-                                                <label className="block text-[10px] font-black uppercase tracking-widest text-[#4c9a8d] mb-2 ml-1">Durée des Symptômes</label>
-                                                <input className="w-full h-12 rounded-xl border-[#e7f3f1] dark:border-[#1e3a36] bg-[#f6f8f8] dark:bg-[#10221f] px-4 text-sm font-bold focus:ring-primary/20 focus:border-primary text-[#0d1b19] dark:text-white" placeholder="ex: 3 jours, 2 semaines" type="text" />
+                                                <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--color-text-muted)] mb-2 ml-1">Durée des Symptômes</label>
+                                                <input className="w-full h-12 rounded-xl border-[var(--color-border)] dark:border-[var(--color-dark-border)] bg-[var(--color-bg-main)] dark:bg-[var(--color-dark-bg-main)] px-4 text-sm font-bold focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] text-[var(--color-text-main)] dark:text-white" placeholder="ex: 3 jours, 2 semaines" type="text" />
                                             </div>
                                         </div>
                                     </div>
@@ -459,32 +465,32 @@ export const ConsultationPage: React.FC<ConsultationPageProps> = ({
                                         </div>
                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                                             {familyHistoryItems.map(item => (
-                                                <label key={item} className="flex items-center gap-3 p-4 bg-[#f6f8f8] dark:bg-[#10221f] rounded-2xl border border-transparent hover:border-primary/30 transition-all cursor-pointer group animate-in fade-in zoom-in duration-300">
-                                                    <input className="size-5 rounded-lg text-primary focus:ring-primary bg-white dark:bg-[#1e3a36] border-[#e7f3f1] dark:border-[#1e3a36]" type="checkbox" />
-                                                    <span className="text-xs font-black uppercase tracking-tight text-[#4c9a8d] group-hover:text-primary transition-colors">{item}</span>
+                                                <label key={item} className="flex items-center gap-3 p-4 bg-[var(--color-bg-main)] dark:bg-[var(--color-dark-bg-main)] rounded-2xl border border-transparent hover:border-[var(--color-primary)]/30 transition-all cursor-pointer group animate-in fade-in zoom-in duration-300">
+                                                    <input className="size-5 rounded-lg text-[var(--color-primary)] focus:ring-[var(--color-primary)] bg-[var(--color-bg-surface)] dark:bg-[var(--color-dark-bg-surface)] border-[var(--color-border)] dark:border-[var(--color-dark-border)]" type="checkbox" />
+                                                    <span className="text-xs font-black uppercase tracking-tight text-[var(--color-text-muted)] group-hover:text-[var(--color-primary)] transition-colors">{item}</span>
                                                 </label>
                                             ))}
                                             {/* Static placeholder for adding */}
-                                            <div className="flex items-center gap-2 p-2 bg-white dark:bg-[#152a26] rounded-2xl border border-dashed border-[#e7f3f1] dark:border-[#1e3a36] focus-within:border-primary transition-all">
+                                            <div className="flex items-center gap-2 p-2 bg-[var(--color-bg-surface)] dark:bg-[var(--color-dark-bg-surface)] rounded-2xl border border-dashed border-[var(--color-border)] dark:border-[var(--color-dark-border)] focus-within:border-[var(--color-primary)] transition-all">
                                                 <input
                                                     type="text"
                                                     value={newHistoryItem}
                                                     onChange={(e) => setNewHistoryItem(e.target.value)}
                                                     onKeyDown={(e) => e.key === 'Enter' && addFamilyHistoryItem()}
                                                     placeholder="Autre antécédent..."
-                                                    className="flex-1 bg-transparent border-none focus:ring-0 text-xs font-bold text-[#0d1b19] dark:text-white placeholder:text-[#4c9a8d]/30"
+                                                    className="flex-1 bg-transparent border-none focus:ring-0 text-xs font-bold text-[var(--color-text-main)] dark:text-white placeholder:text-[var(--color-text-muted)]/30"
                                                 />
                                                 <button
                                                     onClick={addFamilyHistoryItem}
-                                                    className="size-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center hover:bg-primary hover:text-[#0d1b19] transition-all"
+                                                    className="size-8 rounded-xl bg-[var(--color-primary)]/10 text-[var(--color-primary)] flex items-center justify-center hover:bg-[var(--color-primary)] hover:text-[var(--color-text-main)] transition-all"
                                                 >
                                                     <span className="material-symbols-outlined text-sm font-black">add</span>
                                                 </button>
                                             </div>
                                         </div>
                                         <div className="mt-4">
-                                            <label className="block text-[10px] font-black uppercase tracking-widest text-[#4c9a8d] mb-2 ml-1">Détails Additionnels (Antécédents Familiaux)</label>
-                                            <textarea className="w-full rounded-2xl border-[#e7f3f1] dark:border-[#1e3a36] bg-[#f6f8f8] dark:bg-[#10221f] p-4 text-sm font-bold focus:ring-primary/20 focus:border-primary transition-all text-[#0d1b19] dark:text-white min-h-[100px] placeholder:text-[#4c9a8d]/30" placeholder="Précisions sur les membres de la famille..."></textarea>
+                                            <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--color-text-muted)] mb-2 ml-1">Détails Additionnels (Antécédents Familiaux)</label>
+                                            <textarea className="w-full rounded-2xl border-[var(--color-border)] dark:border-[var(--color-dark-border)] bg-[var(--color-bg-main)] dark:bg-[var(--color-dark-bg-main)] p-4 text-sm font-bold focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] transition-all text-[var(--color-text-main)] dark:text-white min-h-[100px] placeholder:text-[var(--color-text-muted)]/30" placeholder="Précisions sur les membres de la famille..."></textarea>
                                         </div>
                                     </div>
                                     <hr className="border-[#e7f3f1] dark:border-[#1e3a36]" />
@@ -496,8 +502,8 @@ export const ConsultationPage: React.FC<ConsultationPageProps> = ({
                                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                             {lifestyleFactors.map((factor) => (
                                                 <div key={factor.id} className="animate-in fade-in zoom-in duration-300">
-                                                    <label className="block text-[10px] font-black uppercase tracking-widest text-[#4c9a8d] mb-2 ml-1">{factor.label}</label>
-                                                    <select className="w-full h-12 rounded-xl border-[#e7f3f1] dark:border-[#1e3a36] bg-[#f6f8f8] dark:bg-[#10221f] px-4 text-sm font-bold focus:ring-primary/20 focus:border-primary text-[#0d1b19] dark:text-white transition-all hover:border-primary/30">
+                                                    <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--color-text-muted)] mb-2 ml-1">{factor.label}</label>
+                                                    <select className="w-full h-12 rounded-xl border-[var(--color-border)] dark:border-[var(--color-dark-border)] bg-[var(--color-bg-main)] dark:bg-[var(--color-dark-bg-main)] px-4 text-sm font-bold focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] text-[var(--color-text-main)] dark:text-white transition-all hover:border-[var(--color-primary)]/30">
                                                         {factor.options.map((opt) => (
                                                             <option key={opt}>{opt}</option>
                                                         ))}
@@ -507,19 +513,19 @@ export const ConsultationPage: React.FC<ConsultationPageProps> = ({
 
                                             {/* Add Factor UI */}
                                             <div className="flex flex-col justify-end">
-                                                <label className="block text-[10px] font-black uppercase tracking-widest text-[#4c9a8d] mb-2 ml-1">Ajouter un facteur</label>
-                                                <div className="flex items-center gap-2 p-2 bg-white dark:bg-[#152a26] rounded-2xl border border-dashed border-[#e7f3f1] dark:border-[#1e3a36] focus-within:border-primary transition-all h-12">
+                                                <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--color-text-muted)] mb-2 ml-1">Ajouter un facteur</label>
+                                                <div className="flex items-center gap-2 p-2 bg-[var(--color-bg-surface)] dark:bg-[var(--color-dark-bg-surface)] rounded-2xl border border-dashed border-[var(--color-border)] dark:border-[var(--color-dark-border)] focus-within:border-[var(--color-primary)] transition-all h-12">
                                                     <input
                                                         type="text"
                                                         value={newLifestyleLabel}
                                                         onChange={(e) => setNewLifestyleLabel(e.target.value)}
                                                         onKeyDown={(e) => e.key === 'Enter' && addLifestyleFactor()}
                                                         placeholder="ex: Sommeil, Stress..."
-                                                        className="flex-1 bg-transparent border-none focus:ring-0 text-xs font-bold text-[#0d1b19] dark:text-white placeholder:text-[#4c9a8d]/30"
+                                                        className="flex-1 bg-transparent border-none focus:ring-0 text-xs font-bold text-[var(--color-text-main)] dark:text-white placeholder:text-[var(--color-text-muted)]/30"
                                                     />
                                                     <button
                                                         onClick={addLifestyleFactor}
-                                                        className="size-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center hover:bg-primary hover:text-[#0d1b19] transition-all"
+                                                        className="size-8 rounded-xl bg-[var(--color-primary)]/10 text-[var(--color-primary)] flex items-center justify-center hover:bg-[var(--color-primary)] hover:text-[var(--color-text-main)] transition-all"
                                                     >
                                                         <span className="material-symbols-outlined text-sm font-black">add</span>
                                                     </button>
@@ -555,11 +561,27 @@ export const ConsultationPage: React.FC<ConsultationPageProps> = ({
                                                 {errors.bpSys && <p className="text-[9px] font-black text-red-500 uppercase mt-1 ml-1">{errors.bpSys}</p>}
                                             </div>
                                             <div>
-                                                <label className="block text-[10px] font-black uppercase tracking-widest text-[#4c9a8d] mb-2 ml-1">
-                                                    Pression Diastolique (mmHg) <span className="text-red-500">*</span>
+                                                <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--color-text-muted)] mb-2 ml-1">
+                                                    Pression Systolique (mmHg) <span className="text-[var(--color-danger)]">*</span>
                                                 </label>
                                                 <input
-                                                    className={`w-full h-12 rounded-xl border ${errors.bpDia ? 'border-red-500 bg-red-50/10' : 'border-[#e7f3f1] dark:border-[#1e3a36]'} bg-[#f6f8f8] dark:bg-[#10221f] px-4 text-sm font-bold focus:ring-primary/20 focus:border-primary text-[#0d1b19] dark:text-white`}
+                                                    className={`w-full h-12 rounded-xl border ${errors.bpSys ? 'border-[var(--color-danger)] bg-[var(--color-danger)]/5' : 'border-[var(--color-border)] dark:border-[var(--color-dark-border)]'} bg-[var(--color-bg-main)] dark:bg-[var(--color-dark-bg-main)] px-4 text-sm font-bold focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] text-[var(--color-text-main)] dark:text-white`}
+                                                    placeholder="ex: 120"
+                                                    type="number"
+                                                    value={examData.bpSys}
+                                                    onChange={(e) => {
+                                                        setExamData({ ...examData, bpSys: e.target.value });
+                                                        if (errors.bpSys) setErrors(prev => ({ ...prev, bpSys: '' }));
+                                                    }}
+                                                />
+                                                {errors.bpSys && <p className="text-[9px] font-black text-[var(--color-danger)] uppercase mt-1 ml-1">{errors.bpSys}</p>}
+                                            </div>
+                                            <div>
+                                                <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--color-text-muted)] mb-2 ml-1">
+                                                    Pression Diastolique (mmHg) <span className="text-[var(--color-danger)]">*</span>
+                                                </label>
+                                                <input
+                                                    className={`w-full h-12 rounded-xl border ${errors.bpDia ? 'border-[var(--color-danger)] bg-[var(--color-danger)]/5' : 'border-[var(--color-border)] dark:border-[var(--color-dark-border)]'} bg-[var(--color-bg-main)] dark:bg-[var(--color-dark-bg-main)] px-4 text-sm font-bold focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] text-[var(--color-text-main)] dark:text-white`}
                                                     placeholder="ex: 80"
                                                     type="number"
                                                     value={examData.bpDia}
@@ -568,14 +590,14 @@ export const ConsultationPage: React.FC<ConsultationPageProps> = ({
                                                         if (errors.bpDia) setErrors(prev => ({ ...prev, bpDia: '' }));
                                                     }}
                                                 />
-                                                {errors.bpDia && <p className="text-[9px] font-black text-red-500 uppercase mt-1 ml-1">{errors.bpDia}</p>}
+                                                {errors.bpDia && <p className="text-[9px] font-black text-[var(--color-danger)] uppercase mt-1 ml-1">{errors.bpDia}</p>}
                                             </div>
                                             <div>
-                                                <label className="block text-[10px] font-black uppercase tracking-widest text-[#4c9a8d] mb-2 ml-1">
-                                                    Fréquence Cardiaque (bpm) <span className="text-red-500">*</span>
+                                                <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--color-text-muted)] mb-2 ml-1">
+                                                    Fréquence Cardiaque (bpm) <span className="text-[var(--color-danger)]">*</span>
                                                 </label>
                                                 <input
-                                                    className={`w-full h-12 rounded-xl border ${errors.heartRate ? 'border-red-500 bg-red-50/10' : 'border-[#e7f3f1] dark:border-[#1e3a36]'} bg-[#f6f8f8] dark:bg-[#10221f] px-4 text-sm font-bold focus:ring-primary/20 focus:border-primary text-[#0d1b19] dark:text-white`}
+                                                    className={`w-full h-12 rounded-xl border ${errors.heartRate ? 'border-[var(--color-danger)] bg-[var(--color-danger)]/5' : 'border-[var(--color-border)] dark:border-[var(--color-dark-border)]'} bg-[var(--color-bg-main)] dark:bg-[var(--color-dark-bg-main)] px-4 text-sm font-bold focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] text-[var(--color-text-main)] dark:text-white`}
                                                     placeholder="ex: 72"
                                                     type="number"
                                                     value={examData.heartRate}
@@ -584,12 +606,12 @@ export const ConsultationPage: React.FC<ConsultationPageProps> = ({
                                                         if (errors.heartRate) setErrors(prev => ({ ...prev, heartRate: '' }));
                                                     }}
                                                 />
-                                                {errors.heartRate && <p className="text-[9px] font-black text-red-500 uppercase mt-1 ml-1">{errors.heartRate}</p>}
+                                                {errors.heartRate && <p className="text-[9px] font-black text-[var(--color-danger)] uppercase mt-1 ml-1">{errors.heartRate}</p>}
                                             </div>
                                             <div>
-                                                <label className="block text-[10px] font-black uppercase tracking-widest text-[#4c9a8d] mb-2 ml-1">Température (°C)</label>
+                                                <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--color-text-muted)] mb-2 ml-1">Température (°C)</label>
                                                 <input
-                                                    className="w-full h-12 rounded-xl border-[#e7f3f1] dark:border-[#1e3a36] bg-[#f6f8f8] dark:bg-[#10221f] px-4 text-sm font-bold focus:ring-primary/20 focus:border-primary text-[#0d1b19] dark:text-white"
+                                                    className="w-full h-12 rounded-xl border-[var(--color-border)] dark:border-[var(--color-dark-border)] bg-[var(--color-bg-main)] dark:bg-[var(--color-dark-bg-main)] px-4 text-sm font-bold focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] text-[var(--color-text-main)] dark:text-white"
                                                     placeholder="ex: 37.2"
                                                     type="number"
                                                     value={examData.temp}
@@ -598,9 +620,9 @@ export const ConsultationPage: React.FC<ConsultationPageProps> = ({
                                             </div>
                                             <div className="col-span-full grid grid-cols-1 md:grid-cols-3 gap-6">
                                                 <div>
-                                                    <label className="block text-[10px] font-black uppercase tracking-widest text-[#4c9a8d] ml-1 mb-2">SpO2 (%)</label>
+                                                    <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--color-text-muted)] ml-1 mb-2">SpO2 (%)</label>
                                                     <input
-                                                        className="w-full h-12 rounded-xl border-[#e7f3f1] dark:border-[#1e3a36] bg-[#f6f8f8] dark:bg-[#10221f] px-4 text-sm font-bold focus:ring-primary/20 focus:border-primary text-[#0d1b19] dark:text-white"
+                                                        className="w-full h-12 rounded-xl border-[var(--color-border)] dark:border-[var(--color-dark-border)] bg-[var(--color-bg-main)] dark:bg-[var(--color-dark-bg-main)] px-4 text-sm font-bold focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] text-[var(--color-text-main)] dark:text-white"
                                                         placeholder="ex: 98"
                                                         type="number"
                                                         value={examData.spo2}
@@ -611,18 +633,18 @@ export const ConsultationPage: React.FC<ConsultationPageProps> = ({
                                         </div>
                                     </div>
 
-                                    <hr className="border-[#e7f3f1] dark:border-[#1e3a36]" />
+                                    <hr className="border-[var(--color-border)] dark:border-[var(--color-dark-border)]" />
 
                                     <div>
                                         <div className="flex items-center gap-2 mb-6">
-                                            <span className="material-symbols-outlined text-primary">straighten</span>
-                                            <h4 className="font-black text-xs uppercase tracking-[0.2em] text-[#4c9a8d]">Biométrie</h4>
+                                            <span className="material-symbols-outlined text-[var(--color-primary)]">straighten</span>
+                                            <h4 className="font-black text-xs uppercase tracking-[0.2em] text-[var(--color-text-muted)]">Biométrie</h4>
                                         </div>
                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                             <div className="space-y-2">
-                                                <label className="block text-[10px] font-black uppercase tracking-widest text-[#4c9a8d] ml-1">Poids (kg)</label>
+                                                <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--color-text-muted)] ml-1">Poids (kg)</label>
                                                 <input
-                                                    className="w-full h-12 rounded-xl border-[#e7f3f1] dark:border-[#1e3a36] bg-[#f6f8f8] dark:bg-[#10221f] px-4 text-sm font-bold focus:ring-primary/20 focus:border-primary text-[#0d1b19] dark:text-white"
+                                                    className="w-full h-12 rounded-xl border-[var(--color-border)] dark:border-[var(--color-dark-border)] bg-[var(--color-bg-main)] dark:bg-[var(--color-dark-bg-main)] px-4 text-sm font-bold focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] text-[var(--color-text-main)] dark:text-white"
                                                     placeholder="ex: 75"
                                                     type="number"
                                                     value={examData.weight}
@@ -630,9 +652,9 @@ export const ConsultationPage: React.FC<ConsultationPageProps> = ({
                                                 />
                                             </div>
                                             <div className="space-y-2">
-                                                <label className="block text-[10px] font-black uppercase tracking-widest text-[#4c9a8d] ml-1">Taille (cm)</label>
+                                                <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--color-text-muted)] ml-1">Taille (cm)</label>
                                                 <input
-                                                    className="w-full h-12 rounded-xl border-[#e7f3f1] dark:border-[#1e3a36] bg-[#f6f8f8] dark:bg-[#10221f] px-4 text-sm font-bold focus:ring-primary/20 focus:border-primary text-[#0d1b19] dark:text-white"
+                                                    className="w-full h-12 rounded-xl border-[var(--color-border)] dark:border-[var(--color-dark-border)] bg-[var(--color-bg-main)] dark:bg-[var(--color-dark-bg-main)] px-4 text-sm font-bold focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] text-[var(--color-text-main)] dark:text-white"
                                                     placeholder="ex: 175"
                                                     type="number"
                                                     value={examData.height}
@@ -640,23 +662,23 @@ export const ConsultationPage: React.FC<ConsultationPageProps> = ({
                                                 />
                                             </div>
                                             <div className="space-y-2">
-                                                <label className="block text-[10px] font-black uppercase tracking-widest text-[#4c9a8d] ml-1">IMC (kg/m²)</label>
-                                                <div className="w-full h-12 rounded-xl bg-[#f6f8f8] dark:bg-[#10221f] border border-[#e7f3f1] dark:border-[#1e3a36] px-4 flex items-center text-sm font-black text-primary">
+                                                <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--color-text-muted)] ml-1">IMC (kg/m²)</label>
+                                                <div className="w-full h-12 rounded-xl bg-[var(--color-bg-main)] dark:bg-[var(--color-dark-bg-main)] border border-[var(--color-border)] dark:border-[var(--color-dark-border)] px-4 flex items-center text-sm font-black text-[var(--color-primary)]">
                                                     {examData.weight && examData.height ? (parseFloat(examData.weight) / Math.pow(parseFloat(examData.height) / 100, 2)).toFixed(1) : '--.-'}
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <hr className="border-[#e7f3f1] dark:border-[#1e3a36]" />
+                                    <hr className="border-[var(--color-border)] dark:border-[var(--color-dark-border)]" />
 
                                     <div>
                                         <div className="flex items-center gap-2 mb-4">
-                                            <span className="material-symbols-outlined text-primary">clinical_notes</span>
-                                            <h4 className="font-black text-xs uppercase tracking-[0.2em] text-[#4c9a8d]">Examen Physique & Notes</h4>
+                                            <span className="material-symbols-outlined text-[var(--color-primary)]">clinical_notes</span>
+                                            <h4 className="font-black text-xs uppercase tracking-[0.2em] text-[var(--color-text-muted)]">Examen Physique & Notes</h4>
                                         </div>
                                         <textarea
-                                            className="w-full rounded-2xl border-[#e7f3f1] dark:border-[#1e3a36] bg-[#f6f8f8] dark:bg-[#10221f] p-4 text-sm font-bold focus:ring-primary/20 focus:border-primary transition-all text-[#0d1b19] dark:text-white min-h-[150px] placeholder:text-[#4c9a8d]/30"
+                                            className="w-full rounded-2xl border-[var(--color-border)] dark:border-[var(--color-dark-border)] bg-[var(--color-bg-main)] dark:bg-[var(--color-dark-bg-main)] p-4 text-sm font-bold focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] transition-all text-[var(--color-text-main)] dark:text-white min-h-[150px] placeholder:text-[var(--color-text-muted)]/30"
                                             placeholder="Détaillez vos observations cliniques (auscultation, œdèmes, souffles...)"
                                             value={examData.notes}
                                             onChange={(e) => setExamData({ ...examData, notes: e.target.value })}
@@ -671,24 +693,24 @@ export const ConsultationPage: React.FC<ConsultationPageProps> = ({
                                         {/* ECG Section */}
                                         <div className="space-y-6">
                                             <div className="flex items-center gap-2 mb-2">
-                                                <span className="material-symbols-outlined text-primary text-xl">ecg_heart</span>
-                                                <h4 className="font-black text-xs uppercase tracking-[0.2em] text-[#4c9a8d]">Électrocardiogramme (ECG)</h4>
+                                                <span className="material-symbols-outlined text-[var(--color-primary)] text-xl">ecg_heart</span>
+                                                <h4 className="font-black text-xs uppercase tracking-[0.2em] text-[var(--color-text-muted)]">Électrocardiogramme (ECG)</h4>
                                             </div>
 
-                                            <div className="aspect-video rounded-2xl border-2 border-dashed border-[#e7f3f1] dark:border-[#1e3a36] bg-[#f6f8f8] dark:bg-[#10221f] flex flex-col items-center justify-center gap-3 group hover:border-primary/50 transition-all cursor-pointer">
-                                                <div className="size-12 rounded-xl bg-white dark:bg-[#152a26] flex items-center justify-center text-[#4c9a8d] group-hover:text-primary transition-all shadow-sm">
+                                            <div className="aspect-video rounded-2xl border-2 border-dashed border-[var(--color-border)] dark:border-[var(--color-dark-border)] bg-[var(--color-bg-main)] dark:bg-[var(--color-dark-bg-main)] flex flex-col items-center justify-center gap-3 group hover:border-[var(--color-primary)]/50 transition-all cursor-pointer">
+                                                <div className="size-12 rounded-xl bg-[var(--color-bg-surface)] dark:bg-[var(--color-dark-bg-surface)] flex items-center justify-center text-[var(--color-text-muted)] group-hover:text-[var(--color-primary)] transition-all shadow-sm">
                                                     <span className="material-symbols-outlined text-3xl">upload_file</span>
                                                 </div>
                                                 <div className="text-center">
-                                                    <p className="text-[10px] font-black uppercase tracking-widest text-[#0d1b19] dark:text-white">Téléverser l'examen ECG</p>
-                                                    <p className="text-[9px] font-bold text-[#4c9a8d] mt-1">Images ou PDF (Max 10MB)</p>
+                                                    <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-text-main)] dark:text-white">Téléverser l'examen ECG</p>
+                                                    <p className="text-[9px] font-bold text-[var(--color-text-muted)] mt-1">Images ou PDF (Max 10MB)</p>
                                                 </div>
                                             </div>
 
                                             <div className="space-y-2">
-                                                <label className="block text-[10px] font-black uppercase tracking-widest text-[#4c9a8d] ml-1">Interprétation ECG</label>
+                                                <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--color-text-muted)] ml-1">Interprétation ECG</label>
                                                 <textarea
-                                                    className="w-full rounded-2xl border-[#e7f3f1] dark:border-[#1e3a36] bg-[#f6f8f8] dark:bg-[#10221f] p-4 text-sm font-bold focus:ring-primary/20 focus:border-primary transition-all text-[#0d1b19] dark:text-white min-h-[120px] placeholder:text-[#4c9a8d]/30"
+                                                    className="w-full rounded-2xl border-[var(--color-border)] dark:border-[var(--color-dark-border)] bg-[var(--color-bg-main)] dark:bg-[var(--color-dark-bg-main)] p-4 text-sm font-bold focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] transition-all text-[var(--color-text-main)] dark:text-white min-h-[120px] placeholder:text-[var(--color-text-muted)]/30"
                                                     placeholder="Rythme sinusal, axe, zones d'ischémie..."
                                                     value={ecgData.interpretation}
                                                     onChange={(e) => setEcgData({ ...ecgData, interpretation: e.target.value })}
@@ -699,34 +721,34 @@ export const ConsultationPage: React.FC<ConsultationPageProps> = ({
                                         {/* ETT Section */}
                                         <div className="space-y-6">
                                             <div className="flex items-center gap-2 mb-2">
-                                                <span className="material-symbols-outlined text-primary text-xl">echo</span>
-                                                <h4 className="font-black text-xs uppercase tracking-[0.2em] text-[#4c9a8d]">Échocardiographie (ETT)</h4>
+                                                <span className="material-symbols-outlined text-[var(--color-primary)] text-xl">echo</span>
+                                                <h4 className="font-black text-xs uppercase tracking-[0.2em] text-[var(--color-text-muted)]">Échocardiographie (ETT)</h4>
                                             </div>
 
-                                            <div className="aspect-video rounded-2xl border-2 border-dashed border-[#e7f3f1] dark:border-[#1e3a36] bg-[#f6f8f8] dark:bg-[#10221f] flex flex-col items-center justify-center gap-3 group hover:border-primary/50 transition-all cursor-pointer">
-                                                <div className="size-12 rounded-xl bg-white dark:bg-[#152a26] flex items-center justify-center text-[#4c9a8d] group-hover:text-primary transition-all shadow-sm">
+                                            <div className="aspect-video rounded-2xl border-2 border-dashed border-[var(--color-border)] dark:border-[var(--color-dark-border)] bg-[var(--color-bg-main)] dark:bg-[var(--color-dark-bg-main)] flex flex-col items-center justify-center gap-3 group hover:border-[var(--color-primary)]/50 transition-all cursor-pointer">
+                                                <div className="size-12 rounded-xl bg-[var(--color-bg-surface)] dark:bg-[var(--color-dark-bg-surface)] flex items-center justify-center text-[var(--color-text-muted)] group-hover:text-[var(--color-primary)] transition-all shadow-sm">
                                                     <span className="material-symbols-outlined text-3xl">add_photo_alternate</span>
                                                 </div>
                                                 <div className="text-center">
-                                                    <p className="text-[10px] font-black uppercase tracking-widest text-[#0d1b19] dark:text-white">Téléverser les clichés ETT</p>
-                                                    <p className="text-[9px] font-bold text-[#4c9a8d] mt-1">Séquences ou rapports</p>
+                                                    <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-text-main)] dark:text-white">Téléverser les clichés ETT</p>
+                                                    <p className="text-[9px] font-bold text-[var(--color-text-muted)] mt-1">Séquences ou rapports</p>
                                                 </div>
                                             </div>
 
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div className="space-y-1">
-                                                    <label className="block text-[9px] font-black uppercase tracking-widest text-[#4c9a8d] ml-1">FEVG (%)</label>
+                                                    <label className="block text-[9px] font-black uppercase tracking-widest text-[var(--color-text-muted)] ml-1">FEVG (%)</label>
                                                     <input
-                                                        className="w-full h-10 rounded-xl border-[#e7f3f1] dark:border-[#1e3a36] bg-[#f6f8f8] dark:bg-[#10221f] px-4 text-xs font-bold focus:ring-primary/20 focus:border-primary text-[#0d1b19] dark:text-white"
+                                                        className="w-full h-10 rounded-xl border-[var(--color-border)] dark:border-[var(--color-dark-border)] bg-[var(--color-bg-main)] dark:bg-[var(--color-dark-bg-main)] px-4 text-xs font-bold focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] text-[var(--color-text-main)] dark:text-white"
                                                         placeholder="ex: 60"
                                                         value={ettData.ef}
                                                         onChange={(e) => setEttData({ ...ettData, ef: e.target.value })}
                                                     />
                                                 </div>
                                                 <div className="space-y-1">
-                                                    <label className="block text-[9px] font-black uppercase tracking-widest text-[#4c9a8d] ml-1">DTDVG (mm)</label>
+                                                    <label className="block text-[9px] font-black uppercase tracking-widest text-[var(--color-text-muted)] ml-1">DTDVG (mm)</label>
                                                     <input
-                                                        className="w-full h-10 rounded-xl border-[#e7f3f1] dark:border-[#1e3a36] bg-[#f6f8f8] dark:bg-[#10221f] px-4 text-xs font-bold focus:ring-primary/20 focus:border-primary text-[#0d1b19] dark:text-white"
+                                                        className="w-full h-10 rounded-xl border-[var(--color-border)] dark:border-[var(--color-dark-border)] bg-[var(--color-bg-main)] dark:bg-[var(--color-dark-bg-main)] px-4 text-xs font-bold focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] text-[var(--color-text-main)] dark:text-white"
                                                         placeholder="ex: 45"
                                                         value={ettData.lvedd}
                                                         onChange={(e) => setEttData({ ...ettData, lvedd: e.target.value })}
@@ -735,9 +757,9 @@ export const ConsultationPage: React.FC<ConsultationPageProps> = ({
                                             </div>
 
                                             <div className="space-y-2">
-                                                <label className="block text-[10px] font-black uppercase tracking-widest text-[#4c9a8d] ml-1">Interprétation ETT</label>
+                                                <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--color-text-muted)] ml-1">Interprétation ETT</label>
                                                 <textarea
-                                                    className="w-full rounded-2xl border-[#e7f3f1] dark:border-[#1e3a36] bg-[#f6f8f8] dark:bg-[#10221f] p-4 text-sm font-bold focus:ring-primary/20 focus:border-primary transition-all text-[#0d1b19] dark:text-white min-h-[100px] placeholder:text-[#4c9a8d]/30"
+                                                    className="w-full rounded-2xl border-[var(--color-border)] dark:border-[var(--color-dark-border)] bg-[var(--color-bg-main)] dark:bg-[var(--color-dark-bg-main)] p-4 text-sm font-bold focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] transition-all text-[var(--color-text-main)] dark:text-white min-h-[100px] placeholder:text-[var(--color-text-muted)]/30"
                                                     placeholder="Valvulopathies, cinétique segmentaire..."
                                                     value={ettData.interpretation}
                                                     onChange={(e) => setEttData({ ...ettData, interpretation: e.target.value })}
@@ -752,74 +774,74 @@ export const ConsultationPage: React.FC<ConsultationPageProps> = ({
                                 <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         {/* CHA2DS2-VASc Score */}
-                                        <div className="bg-[#f6f8f8] dark:bg-[#10221f] rounded-2xl p-6 border border-[#e7f3f1] dark:border-[#1e3a36] relative overflow-hidden group hover:border-primary/30 transition-all">
+                                        <div className="bg-[var(--color-bg-main)] dark:bg-[var(--color-dark-bg-main)] rounded-2xl p-6 border border-[var(--color-border)] dark:border-[var(--color-dark-border)] relative overflow-hidden group hover:border-[var(--color-primary)]/30 transition-all">
                                             <div className="flex justify-between items-start mb-4">
                                                 <div>
-                                                    <h4 className="font-black text-[10px] uppercase tracking-widest text-[#4c9a8d] mb-1">CHA₂DS₂-VASc</h4>
-                                                    <p className="text-[9px] font-bold text-[#4c9a8d]/60 uppercase tracking-tight">Risque d'accident vasculaire cérébral</p>
+                                                    <h4 className="font-black text-[10px] uppercase tracking-widest text-[var(--color-text-muted)] mb-1">CHA₂DS₂-VASc</h4>
+                                                    <p className="text-[9px] font-bold text-[var(--color-text-muted)]/60 uppercase tracking-tight">Risque d'accident vasculaire cérébral</p>
                                                 </div>
-                                                <div className="size-10 rounded-xl bg-white dark:bg-[#152a26] flex items-center justify-center text-primary font-black text-lg shadow-sm">
+                                                <div className="size-10 rounded-xl bg-[var(--color-bg-surface)] dark:bg-[var(--color-dark-bg-surface)] flex items-center justify-center text-[var(--color-primary)] font-black text-lg shadow-sm">
                                                     {scores.chadsVasc}
                                                 </div>
                                             </div>
-                                            <div className="h-1.5 w-full bg-[#e7f3f1] dark:bg-[#1e3a36] rounded-full overflow-hidden">
-                                                <div className="h-full bg-primary" style={{ width: `${(scores.chadsVasc / 9) * 100}%` }}></div>
+                                            <div className="h-1.5 w-full bg-[var(--color-border)] dark:bg-[var(--color-dark-border)] rounded-full overflow-hidden">
+                                                <div className="h-full bg-[var(--color-primary)]" style={{ width: `${(scores.chadsVasc / 9) * 100}%` }}></div>
                                             </div>
-                                            <p className="mt-3 text-[9px] font-black text-primary uppercase tracking-widest">Risque estimé: {scores.chadsVasc > 2 ? 'Élevé' : 'Modéré'}</p>
+                                            <p className="mt-3 text-[9px] font-black text-[var(--color-primary)] uppercase tracking-widest">Risque estimé: {scores.chadsVasc > 2 ? 'Élevé' : 'Modéré'}</p>
                                         </div>
 
                                         {/* HAS-BLED Score */}
-                                        <div className="bg-[#f6f8f8] dark:bg-[#10221f] rounded-2xl p-6 border border-[#e7f3f1] dark:border-[#1e3a36] relative overflow-hidden group hover:border-primary/30 transition-all">
+                                        <div className="bg-[var(--color-bg-main)] dark:bg-[var(--color-dark-bg-main)] rounded-2xl p-6 border border-[var(--color-border)] dark:border-[var(--color-dark-border)] relative overflow-hidden group hover:border-[var(--color-primary)]/30 transition-all">
                                             <div className="flex justify-between items-start mb-4">
                                                 <div>
-                                                    <h4 className="font-black text-[10px] uppercase tracking-widest text-[#4c9a8d] mb-1">HAS-BLED</h4>
-                                                    <p className="text-[9px] font-bold text-[#4c9a8d]/60 uppercase tracking-tight">Risque hémorragique majeur</p>
+                                                    <h4 className="font-black text-[10px] uppercase tracking-widest text-[var(--color-text-muted)] mb-1">HAS-BLED</h4>
+                                                    <p className="text-[9px] font-bold text-[var(--color-text-muted)]/60 uppercase tracking-tight">Risque hémorragique majeur</p>
                                                 </div>
-                                                <div className="size-10 rounded-xl bg-white dark:bg-[#152a26] flex items-center justify-center text-orange-400 font-black text-lg shadow-sm">
+                                                <div className="size-10 rounded-xl bg-[var(--color-bg-surface)] dark:bg-[var(--color-dark-bg-surface)] flex items-center justify-center text-[var(--color-warning)] font-black text-lg shadow-sm">
                                                     {scores.hasBled}
                                                 </div>
                                             </div>
-                                            <div className="h-1.5 w-full bg-[#e7f3f1] dark:bg-[#1e3a36] rounded-full overflow-hidden">
-                                                <div className="h-full bg-orange-400" style={{ width: `${(scores.hasBled / 9) * 100}%` }}></div>
+                                            <div className="h-1.5 w-full bg-[var(--color-border)] dark:bg-[var(--color-dark-border)] rounded-full overflow-hidden">
+                                                <div className="h-full bg-[var(--color-warning)]" style={{ width: `${(scores.hasBled / 9) * 100}%` }}></div>
                                             </div>
-                                            <p className="mt-3 text-[9px] font-black text-orange-400 uppercase tracking-widest">Risque de saignement: {scores.hasBled >= 3 ? 'Élevé' : 'Faible'}</p>
+                                            <p className="mt-3 text-[9px] font-black text-[var(--color-warning)] uppercase tracking-widest">Risque de saignement: {scores.hasBled >= 3 ? 'Élevé' : 'Faible'}</p>
                                         </div>
 
                                         {/* SCORE 2 / SCORE OP */}
-                                        <div className="bg-[#f6f8f8] dark:bg-[#10221f] rounded-2xl p-6 border border-[#e7f3f1] dark:border-[#1e3a36] relative overflow-hidden group hover:border-primary/30 transition-all col-span-full">
+                                        <div className="bg-[var(--color-bg-main)] dark:bg-[var(--color-dark-bg-main)] rounded-2xl p-6 border border-[var(--color-border)] dark:border-[var(--color-dark-border)] relative overflow-hidden group hover:border-[var(--color-primary)]/30 transition-all col-span-full">
                                             <div className="flex justify-between items-center mb-6">
                                                 <div>
-                                                    <h4 className="font-black text-[10px] uppercase tracking-widest text-[#4c9a8d] mb-1">Risque Cardiovasculaire (SCORE 2)</h4>
-                                                    <p className="text-[9px] font-bold text-[#4c9a8d]/60 uppercase tracking-tight">Risque à 10 ans d'événements CV majeurs</p>
+                                                    <h4 className="font-black text-[10px] uppercase tracking-widest text-[var(--color-text-muted)] mb-1">Risque Cardiovasculaire (SCORE 2)</h4>
+                                                    <p className="text-[9px] font-bold text-[var(--color-text-muted)]/60 uppercase tracking-tight">Risque à 10 ans d'événements CV majeurs</p>
                                                 </div>
-                                                <div className="px-4 py-2 rounded-xl bg-red-500/10 text-red-500 font-black text-xs uppercase tracking-widest border border-red-500/20">
+                                                <div className="px-4 py-2 rounded-xl bg-[var(--color-danger)]/10 text-[var(--color-danger)] font-black text-xs uppercase tracking-widest border border-[var(--color-danger)]/20">
                                                     Risque Élevé (12.4%)
                                                 </div>
                                             </div>
 
                                             <div className="flex items-center gap-4">
-                                                <div className="flex-1 h-3 bg-[#e7f3f1] dark:bg-[#1e3a36] rounded-full overflow-hidden flex">
-                                                    <div className="h-full bg-green-400" style={{ width: '25%' }}></div>
-                                                    <div className="h-full bg-yellow-400" style={{ width: '25%' }}></div>
+                                                <div className="flex-1 h-3 bg-[var(--color-border)] dark:bg-[var(--color-dark-border)] rounded-full overflow-hidden flex">
+                                                    <div className="h-full bg-[var(--color-success)]" style={{ width: '25%' }}></div>
+                                                    <div className="h-full bg-[var(--color-warning)]" style={{ width: '25%' }}></div>
                                                     <div className="h-full bg-orange-400" style={{ width: '25%' }}></div>
-                                                    <div className="h-full bg-red-500" style={{ width: '25%' }}></div>
+                                                    <div className="h-full bg-[var(--color-danger)]" style={{ width: '25%' }}></div>
                                                 </div>
                                             </div>
                                             <div className="flex justify-between mt-2 px-1">
-                                                <span className="text-[8px] font-black text-[#4c9a8d] uppercase tracking-tighter">Bas</span>
-                                                <span className="text-[8px] font-black text-[#4c9a8d] uppercase tracking-tighter">Modéré</span>
-                                                <span className="text-[8px] font-black text-[#4c9a8d] uppercase tracking-tighter">Élevé</span>
-                                                <span className="text-[8px] font-black text-[#4c9a8d] uppercase tracking-tighter">Très Élevé</span>
+                                                <span className="text-[8px] font-black text-[var(--color-text-muted)] uppercase tracking-tighter">Bas</span>
+                                                <span className="text-[8px] font-black text-[var(--color-text-muted)] uppercase tracking-tighter">Modéré</span>
+                                                <span className="text-[8px] font-black text-[var(--color-text-muted)] uppercase tracking-tighter">Élevé</span>
+                                                <span className="text-[8px] font-black text-[var(--color-text-muted)] uppercase tracking-tighter">Très Élevé</span>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="p-6 bg-primary/5 rounded-2xl border border-primary/20">
+                                    <div className="p-6 bg-[var(--color-primary)]/5 rounded-2xl border border-[var(--color-primary)]/20">
                                         <div className="flex items-center gap-3 mb-2">
-                                            <span className="material-symbols-outlined text-primary text-sm">info</span>
-                                            <h5 className="text-[10px] font-black uppercase tracking-widest text-[#0d1b19] dark:text-white">Note sur le calcul</h5>
+                                            <span className="material-symbols-outlined text-[var(--color-primary)] text-sm">info</span>
+                                            <h5 className="text-[10px] font-black uppercase tracking-widest text-[var(--color-text-main)] dark:text-white">Note sur le calcul</h5>
                                         </div>
-                                        <p className="text-[10px] font-bold text-[#4c9a8d] leading-relaxed">
+                                        <p className="text-[10px] font-bold text-[var(--color-text-muted)] leading-relaxed">
                                             Les scores sont calculés automatiquement à partir des données saisies dans l'anamnèse et l'examen clinique (âge, sexe, tabagisme, TA, diabète).
                                         </p>
                                     </div>
@@ -830,17 +852,17 @@ export const ConsultationPage: React.FC<ConsultationPageProps> = ({
                                 <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                                     <div>
                                         <div className="flex items-center gap-2 mb-6">
-                                            <span className="material-symbols-outlined text-primary">fact_check</span>
-                                            <h4 className="font-black text-xs uppercase tracking-[0.2em] text-[#4c9a8d]">Conclusions Diagnostiques</h4>
+                                            <span className="material-symbols-outlined text-[var(--color-primary)]">fact_check</span>
+                                            <h4 className="font-black text-xs uppercase tracking-[0.2em] text-[var(--color-text-muted)]">Conclusions Diagnostiques</h4>
                                         </div>
 
                                         <div className="space-y-6">
                                             <div className="space-y-2">
-                                                <label className="block text-[10px] font-black uppercase tracking-widest text-[#4c9a8d] ml-1">Diagnostic Principal</label>
+                                                <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--color-text-muted)] ml-1">Diagnostic Principal</label>
                                                 <div className="relative group">
-                                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-[#4c9a8d] group-focus-within:text-primary transition-colors">search</span>
+                                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-[var(--color-text-muted)] group-focus-within:text-[var(--color-primary)] transition-colors">search</span>
                                                     <input
-                                                        className={`w-full h-14 rounded-2xl border ${errors.primaryDiagnosis ? 'border-red-500 bg-red-50/10' : 'border-[#e7f3f1] dark:border-[#1e3a36]'} bg-[#f6f8f8] dark:bg-[#10221f] pl-12 pr-4 text-sm font-bold focus:ring-primary/20 focus:border-primary text-[#0d1b19] dark:text-white transition-all`}
+                                                        className={`w-full h-14 rounded-2xl border ${errors.primaryDiagnosis ? 'border-[var(--color-danger)] bg-[var(--color-danger)]/5' : 'border-[var(--color-border)] dark:border-[var(--color-dark-border)]'} bg-[var(--color-bg-main)] dark:bg-[var(--color-dark-bg-main)] pl-12 pr-4 text-sm font-bold focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] text-[var(--color-text-main)] dark:text-white transition-all`}
                                                         placeholder="Rechercher ou saisir un diagnostic..."
                                                         value={diagnosticData.primaryDiagnosis}
                                                         onChange={(e) => {
@@ -849,13 +871,13 @@ export const ConsultationPage: React.FC<ConsultationPageProps> = ({
                                                         }}
                                                     />
                                                 </div>
-                                                {errors.primaryDiagnosis && <p className="text-[9px] font-black text-red-500 uppercase mt-1 ml-1">{errors.primaryDiagnosis}</p>}
+                                                {errors.primaryDiagnosis && <p className="text-[9px] font-black text-[var(--color-danger)] uppercase mt-1 ml-1">{errors.primaryDiagnosis}</p>}
                                                 <div className="flex flex-wrap gap-2 mt-3">
                                                     {availableDiagnoses.slice(0, 4).map(d => (
                                                         <button
                                                             key={d}
                                                             onClick={() => setDiagnosticData({ ...diagnosticData, primaryDiagnosis: d })}
-                                                            className="px-3 py-1.5 bg-white dark:bg-[#1e3a36] border border-[#e7f3f1] dark:border-[#1e3a36] rounded-xl text-[9px] font-black uppercase tracking-tight text-[#4c9a8d] hover:border-primary hover:text-primary transition-all shadow-sm"
+                                                            className="px-3 py-1.5 bg-white dark:bg-[#1e3a36] border border-[var(--color-border)] dark:border-[var(--color-dark-border)] rounded-xl text-[9px] font-black uppercase tracking-tight text-[var(--color-text-muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] transition-all shadow-sm"
                                                         >
                                                             {d}
                                                         </button>
@@ -864,9 +886,9 @@ export const ConsultationPage: React.FC<ConsultationPageProps> = ({
                                             </div>
 
                                             <div className="space-y-2">
-                                                <label className="block text-[10px] font-black uppercase tracking-widest text-[#4c9a8d] ml-1">Diagnostics Associés / Comorbidités</label>
+                                                <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--color-text-muted)] ml-1">Diagnostics Associés / Comorbidités</label>
                                                 <textarea
-                                                    className="w-full rounded-2xl border-[#e7f3f1] dark:border-[#1e3a36] bg-[#f6f8f8] dark:bg-[#10221f] p-4 text-sm font-bold focus:ring-primary/20 focus:border-primary transition-all text-[#0d1b19] dark:text-white min-h-[100px] placeholder:text-[#4c9a8d]/30"
+                                                    className="w-full rounded-2xl border-[var(--color-border)] dark:border-[var(--color-dark-border)] bg-[var(--color-bg-main)] dark:bg-[var(--color-dark-bg-main)] p-4 text-sm font-bold focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] transition-all text-[var(--color-text-main)] dark:text-white min-h-[100px] placeholder:text-[var(--color-text-muted)]/30"
                                                     placeholder="Diabète type 2, IRC stade 3..."
                                                     value={diagnosticData.notes}
                                                     onChange={(e) => setDiagnosticData({ ...diagnosticData, notes: e.target.value })}
@@ -875,30 +897,30 @@ export const ConsultationPage: React.FC<ConsultationPageProps> = ({
                                         </div>
                                     </div>
 
-                                    <div className="p-6 bg-[#f8fcfb] dark:bg-white/5 rounded-2xl border border-[#e7f3f1] dark:border-[#1e3a36]">
+                                    <div className="p-6 bg-[var(--color-bg-surface)] dark:bg-[var(--color-dark-bg-surface)] rounded-2xl border border-[var(--color-border)] dark:border-[var(--color-dark-border)]">
                                         <div className="flex items-center justify-between mb-4">
                                             <div className="flex items-center gap-2">
-                                                <span className="material-symbols-outlined text-primary text-xs">summary</span>
-                                                <h5 className="text-[10px] font-black uppercase tracking-widest text-[#4c9a8d]">Résumé de la consultation</h5>
+                                                <span className="material-symbols-outlined text-[var(--color-primary)] text-xs">summary</span>
+                                                <h5 className="text-[10px] font-black uppercase tracking-widest text-[var(--color-text-muted)]">Résumé de la consultation</h5>
                                             </div>
-                                            <button className="text-[9px] font-black text-primary uppercase tracking-widest hover:underline">Modifier</button>
+                                            <button className="text-[9px] font-black text-[var(--color-primary)] uppercase tracking-widest hover:underline">Modifier</button>
                                         </div>
                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                            <div className="p-3 bg-white dark:bg-[#152a26] rounded-xl border border-[#e7f3f1] dark:border-[#1e3a36]">
-                                                <p className="text-[8px] font-black text-[#4c9a8d] uppercase mb-1">TA</p>
-                                                <p className="text-xs font-black text-[#0d1b19] dark:text-white">{examData.bpSys || '--'}/{examData.bpDia || '--'}</p>
+                                            <div className="p-3 bg-[var(--color-bg-main)] dark:bg-[var(--color-dark-bg-main)] rounded-xl border border-[var(--color-border)] dark:border-[var(--color-dark-border)]">
+                                                <p className="text-[8px] font-black text-[var(--color-text-muted)] uppercase mb-1">TA</p>
+                                                <p className="text-xs font-black text-[var(--color-text-main)] dark:text-white">{examData.bpSys || '--'}/{examData.bpDia || '--'}</p>
                                             </div>
-                                            <div className="p-3 bg-white dark:bg-[#152a26] rounded-xl border border-[#e7f3f1] dark:border-[#1e3a36]">
-                                                <p className="text-[8px] font-black text-[#4c9a8d] uppercase mb-1">FC</p>
-                                                <p className="text-xs font-black text-[#0d1b19] dark:text-white">{examData.heartRate || '--'} bpm</p>
+                                            <div className="p-3 bg-[var(--color-bg-main)] dark:bg-[var(--color-dark-bg-main)] rounded-xl border border-[var(--color-border)] dark:border-[var(--color-dark-border)]">
+                                                <p className="text-[8px] font-black text-[var(--color-text-muted)] uppercase mb-1">FC</p>
+                                                <p className="text-xs font-black text-[var(--color-text-main)] dark:text-white">{examData.heartRate || '--'} bpm</p>
                                             </div>
-                                            <div className="p-3 bg-white dark:bg-[#152a26] rounded-xl border border-[#e7f3f1] dark:border-[#1e3a36]">
-                                                <p className="text-[8px] font-black text-[#4c9a8d] uppercase mb-1">FEVG</p>
-                                                <p className="text-xs font-black text-[#0d1b19] dark:text-white">{ettData.ef || '--'}%</p>
+                                            <div className="p-3 bg-[var(--color-bg-main)] dark:bg-[var(--color-dark-bg-main)] rounded-xl border border-[var(--color-border)] dark:border-[var(--color-dark-border)]">
+                                                <p className="text-[8px] font-black text-[var(--color-text-muted)] uppercase mb-1">FEVG</p>
+                                                <p className="text-xs font-black text-[var(--color-text-main)] dark:text-white">{ettData.ef || '--'}%</p>
                                             </div>
-                                            <div className="p-3 bg-white dark:bg-[#152a26] rounded-xl border border-[#e7f3f1] dark:border-[#1e3a36]">
-                                                <p className="text-[8px] font-black text-[#4c9a8d] uppercase mb-1">Symptôme</p>
-                                                <p className="text-xs font-black text-[#0d1b19] dark:text-white truncate">Palpitations</p>
+                                            <div className="p-3 bg-[var(--color-bg-main)] dark:bg-[var(--color-dark-bg-main)] rounded-xl border border-[var(--color-border)] dark:border-[var(--color-dark-border)]">
+                                                <p className="text-[8px] font-black text-[var(--color-text-muted)] uppercase mb-1">Symptôme</p>
+                                                <p className="text-xs font-black text-[var(--color-text-main)] dark:text-white truncate">Palpitations</p>
                                             </div>
                                         </div>
                                     </div>
@@ -910,37 +932,37 @@ export const ConsultationPage: React.FC<ConsultationPageProps> = ({
                                     <div>
                                         <div className="flex items-center justify-between mb-6">
                                             <div className="flex items-center gap-2">
-                                                <span className="material-symbols-outlined text-primary">medication</span>
-                                                <h4 className="font-black text-xs uppercase tracking-[0.2em] text-[#4c9a8d]">Prescription Médicale</h4>
+                                                <span className="material-symbols-outlined text-[var(--color-primary)]">medication</span>
+                                                <h4 className="font-black text-xs uppercase tracking-[0.2em] text-[var(--color-text-muted)]">Prescription Médicale</h4>
                                             </div>
-                                            <button className="flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-primary hover:text-[#0d1b19] transition-all">
+                                            <button className="flex items-center gap-2 px-4 py-2 bg-[var(--color-primary)]/10 text-[var(--color-primary)] rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[var(--color-primary)] hover:text-[#0d1b19] transition-all">
                                                 <span className="material-symbols-outlined text-sm">auto_fix</span>
                                                 Modèles Intelligents
                                             </button>
                                         </div>
 
-                                        <div className="overflow-hidden rounded-2xl border border-[#e7f3f1] dark:border-[#1e3a36] bg-white dark:bg-[#152a26]">
+                                        <div className="overflow-hidden rounded-2xl border border-[var(--color-border)] dark:border-[var(--color-dark-border)] bg-[var(--color-bg-surface)] dark:bg-[var(--color-dark-bg-surface)]">
                                             <table className="w-full text-left border-collapse">
                                                 <thead>
-                                                    <tr className="bg-[#f8fcfb] dark:bg-white/5 border-b border-[#e7f3f1] dark:border-[#1e3a36]">
-                                                        <th className="p-4 text-[10px] font-black uppercase tracking-widest text-[#4c9a8d]">Médicament</th>
-                                                        <th className="p-4 text-[10px] font-black uppercase tracking-widest text-[#4c9a8d]">Posologie</th>
-                                                        <th className="p-4 text-[10px] font-black uppercase tracking-widest text-[#4c9a8d]">Fréquence</th>
-                                                        <th className="p-4 text-[10px] font-black uppercase tracking-widest text-[#4c9a8d]">Durée</th>
+                                                    <tr className="bg-[var(--color-bg-main)] dark:bg-white/5 border-b border-[var(--color-border)] dark:border-[var(--color-dark-border)]">
+                                                        <th className="p-4 text-[10px] font-black uppercase tracking-widest text-[var(--color-text-muted)]">Médicament</th>
+                                                        <th className="p-4 text-[10px] font-black uppercase tracking-widest text-[var(--color-text-muted)]">Posologie</th>
+                                                        <th className="p-4 text-[10px] font-black uppercase tracking-widest text-[var(--color-text-muted)]">Fréquence</th>
+                                                        <th className="p-4 text-[10px] font-black uppercase tracking-widest text-[var(--color-text-muted)]">Durée</th>
                                                         <th className="p-4 w-16"></th>
                                                     </tr>
                                                 </thead>
-                                                <tbody className="divide-y divide-[#f6f8f8] dark:divide-white/5">
+                                                <tbody className="divide-y divide-[var(--color-border)] dark:divide-[var(--color-dark-border)]">
                                                     {prescriptions.map((p) => (
-                                                        <tr key={p.id} className="group hover:bg-[#f8fcfb] dark:hover:bg-white/5 transition-colors">
-                                                            <td className="p-4 text-xs font-bold text-[#0d1b19] dark:text-white">{p.drug}</td>
-                                                            <td className="p-4 text-xs font-bold text-[#4c9a8d]">{p.dosage}</td>
-                                                            <td className="p-4 text-xs font-bold text-[#4c9a8d]">{p.frequency}</td>
-                                                            <td className="p-4 text-xs font-bold text-[#4c9a8d]">{p.duration}</td>
+                                                        <tr key={p.id} className="group hover:bg-[var(--color-bg-main)] dark:hover:bg-white/5 transition-colors">
+                                                            <td className="p-4 text-xs font-bold text-[var(--color-text-main)] dark:text-white">{p.drug}</td>
+                                                            <td className="p-4 text-xs font-bold text-[var(--color-text-muted)]">{p.dosage}</td>
+                                                            <td className="p-4 text-xs font-bold text-[var(--color-text-muted)]">{p.frequency}</td>
+                                                            <td className="p-4 text-xs font-bold text-[var(--color-text-muted)]">{p.duration}</td>
                                                             <td className="p-4">
                                                                 <button
                                                                     onClick={() => removePrescription(p.id)}
-                                                                    className="size-8 rounded-lg flex items-center justify-center text-[#4c9a8d] hover:text-red-500 hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100"
+                                                                    className="size-8 rounded-lg flex items-center justify-center text-[var(--color-text-muted)] hover:text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10 transition-all opacity-0 group-hover:opacity-100"
                                                                 >
                                                                     <span className="material-symbols-outlined text-sm">delete</span>
                                                                 </button>
@@ -948,10 +970,10 @@ export const ConsultationPage: React.FC<ConsultationPageProps> = ({
                                                         </tr>
                                                     ))}
                                                     {/* Add Row */}
-                                                    <tr className="bg-[#f6f8f8]/50 dark:bg-[#10221f]/30">
+                                                    <tr className="bg-[var(--color-bg-main)]/50 dark:bg-[var(--color-dark-bg-main)]/30">
                                                         <td className="p-2">
                                                             <input
-                                                                className="w-full h-10 px-3 bg-transparent border-none focus:ring-0 text-xs font-bold text-[#0d1b19] dark:text-white placeholder:text-[#4c9a8d]/30"
+                                                                className="w-full h-10 px-3 bg-transparent border-none focus:ring-0 text-xs font-bold text-[var(--color-text-main)] dark:text-white placeholder:text-[var(--color-text-muted)]/30"
                                                                 placeholder="ex: Aspirine"
                                                                 value={newPrescription.drug}
                                                                 onChange={(e) => setNewPrescription({ ...newPrescription, drug: e.target.value })}
@@ -959,7 +981,7 @@ export const ConsultationPage: React.FC<ConsultationPageProps> = ({
                                                         </td>
                                                         <td className="p-2">
                                                             <input
-                                                                className="w-full h-10 px-3 bg-transparent border-none focus:ring-0 text-xs font-bold text-[#4c9a8d] placeholder:text-[#4c9a8d]/30"
+                                                                className="w-full h-10 px-3 bg-transparent border-none focus:ring-0 text-xs font-bold text-[var(--color-text-muted)] placeholder:text-[var(--color-text-muted)]/30"
                                                                 placeholder="ex: 100mg"
                                                                 value={newPrescription.dosage}
                                                                 onChange={(e) => setNewPrescription({ ...newPrescription, dosage: e.target.value })}
@@ -967,7 +989,7 @@ export const ConsultationPage: React.FC<ConsultationPageProps> = ({
                                                         </td>
                                                         <td className="p-2">
                                                             <input
-                                                                className="w-full h-10 px-3 bg-transparent border-none focus:ring-0 text-xs font-bold text-[#4c9a8d] placeholder:text-[#4c9a8d]/30"
+                                                                className="w-full h-10 px-3 bg-transparent border-none focus:ring-0 text-xs font-bold text-[var(--color-text-muted)] placeholder:text-[var(--color-text-muted)]/30"
                                                                 placeholder="ex: 1x/j"
                                                                 value={newPrescription.frequency}
                                                                 onChange={(e) => setNewPrescription({ ...newPrescription, frequency: e.target.value })}
@@ -975,7 +997,7 @@ export const ConsultationPage: React.FC<ConsultationPageProps> = ({
                                                         </td>
                                                         <td className="p-2">
                                                             <input
-                                                                className="w-full h-10 px-3 bg-transparent border-none focus:ring-0 text-xs font-bold text-[#4c9a8d] placeholder:text-[#4c9a8d]/30"
+                                                                className="w-full h-10 px-3 bg-transparent border-none focus:ring-0 text-xs font-bold text-[var(--color-text-muted)] placeholder:text-[var(--color-text-muted)]/30"
                                                                 placeholder="ex: Permanent"
                                                                 value={newPrescription.duration}
                                                                 onChange={(e) => setNewPrescription({ ...newPrescription, duration: e.target.value })}
@@ -984,7 +1006,7 @@ export const ConsultationPage: React.FC<ConsultationPageProps> = ({
                                                         <td className="p-2">
                                                             <button
                                                                 onClick={addPrescription}
-                                                                className="size-8 rounded-xl bg-primary text-[#0d1b19] flex items-center justify-center hover:brightness-105 shadow-sm transition-all"
+                                                                className="size-8 rounded-xl bg-[var(--color-primary)] text-[#0d1b19] flex items-center justify-center hover:brightness-105 shadow-sm transition-all"
                                                             >
                                                                 <span className="material-symbols-outlined text-sm font-black">add</span>
                                                             </button>
@@ -997,14 +1019,29 @@ export const ConsultationPage: React.FC<ConsultationPageProps> = ({
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <div className="space-y-2">
-                                            <label className="block text-[10px] font-black uppercase tracking-widest text-[#4c9a8d] ml-1">Instructions Complémentaires</label>
-                                            <textarea className="w-full rounded-2xl border-[#e7f3f1] dark:border-[#1e3a36] bg-[#f6f8f8] dark:bg-[#10221f] p-4 text-sm font-bold focus:ring-primary/20 focus:border-primary transition-all text-[#0d1b19] dark:text-white min-h-[100px] placeholder:text-[#4c9a8d]/30" placeholder="Conseils hygiéno-diététiques, prochain RDV..."></textarea>
+                                            <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--color-text-muted)] ml-1">Instructions Complémentaires</label>
+                                            <textarea className="w-full rounded-2xl border-[var(--color-border)] dark:border-[var(--color-dark-border)] bg-[var(--color-bg-main)] dark:bg-[var(--color-dark-bg-main)] p-4 text-sm font-bold focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] transition-all text-[var(--color-text-main)] dark:text-white min-h-[100px] placeholder:text-[var(--color-text-muted)]/30" placeholder="Conseils hygiéno-diététiques, prochain RDV..."></textarea>
                                         </div>
-                                        <div className="bg-primary/5 rounded-2xl border border-dashed border-primary/30 p-6 flex flex-col items-center justify-center text-center">
-                                            <span className="material-symbols-outlined text-3xl text-primary mb-2">picture_as_pdf</span>
-                                            <h5 className="text-[10px] font-black uppercase tracking-widest text-[#0d1b19] dark:text-white">Générer l'ordonnance</h5>
-                                            <p className="text-[9px] font-bold text-[#4c9a8d] mt-1 mb-4">Export PDF automatique avec signature numérique</p>
-                                            <button className="px-6 py-2 bg-primary text-[#0d1b19] rounded-xl text-[9px] font-black uppercase tracking-[0.2em] shadow-lg shadow-primary/20 hover:brightness-105 transition-all">
+                                        <div className="bg-[var(--color-primary)]/5 rounded-2xl border border-dashed border-[var(--color-primary)]/30 p-6 flex flex-col items-center justify-center text-center">
+                                            <span className="material-symbols-outlined text-3xl text-[var(--color-primary)] mb-2">picture_as_pdf</span>
+                                            <h5 className="text-[10px] font-black uppercase tracking-widest text-[var(--color-text-main)] dark:text-white">Générer l'ordonnance</h5>
+                                            <p className="text-[9px] font-bold text-[var(--color-text-muted)] mt-1 mb-4">Export PDF automatique avec signature numérique</p>
+                                            <button
+                                                onClick={() => {
+                                                    if (patientInfo) {
+                                                        generatePrescriptionPDF(
+                                                            {
+                                                                name: patientInfo.full_name,
+                                                                age: patientInfo.age,
+                                                                gender: patientInfo.gender,
+                                                                weight: examData.weight || (latestExamData?.weight ? String(latestExamData.weight) : undefined)
+                                                            },
+                                                            prescriptions
+                                                        );
+                                                    }
+                                                }}
+                                                disabled={prescriptions.length === 0}
+                                                className="px-6 py-2 bg-[var(--color-primary)] text-[#0d1b19] rounded-xl text-[9px] font-black uppercase tracking-[0.2em] shadow-lg shadow-[var(--color-primary)]/20 hover:brightness-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
                                                 Prévisualiser
                                             </button>
                                         </div>
@@ -1022,10 +1059,10 @@ export const ConsultationPage: React.FC<ConsultationPageProps> = ({
                         </div>
 
                         {/* Footer Actions */}
-                        <div className="p-6 bg-[#f8fcfb] dark:bg-white/5 border-t border-[#e7f3f1] dark:border-[#1e3a36] flex justify-between items-center mt-auto">
+                        <div className="p-6 bg-[var(--color-bg-surface)] dark:bg-[var(--color-dark-bg-surface)] border-t border-[var(--color-border)] dark:border-[var(--color-dark-border)] flex justify-between items-center mt-auto">
                             <button
                                 onClick={onBack}
-                                className="px-6 py-2.5 text-[10px] font-black uppercase tracking-widest text-[#4c9a8d] hover:text-red-500 transition-colors flex items-center gap-2"
+                                className="px-6 py-2.5 text-[10px] font-black uppercase tracking-widest text-[var(--color-text-muted)] hover:text-[var(--color-danger)] transition-colors flex items-center gap-2"
                             >
                                 <span className="material-symbols-outlined text-sm">close</span> Annuler
                             </button>
@@ -1033,7 +1070,7 @@ export const ConsultationPage: React.FC<ConsultationPageProps> = ({
                                 {currentStep > 1 && (
                                     <button
                                         onClick={prevStep}
-                                        className="px-6 py-2.5 bg-white dark:bg-[#152a26] border border-[#e7f3f1] dark:border-[#1e3a36] rounded-xl font-black text-[10px] uppercase tracking-widest text-[#0d1b19] dark:text-white shadow-sm hover:bg-gray-50 transition-all"
+                                        className="px-6 py-2.5 bg-[var(--color-bg-surface)] dark:bg-[var(--color-dark-bg-surface)] border border-[var(--color-border)] dark:border-[var(--color-dark-border)] rounded-xl font-black text-[10px] uppercase tracking-widest text-[var(--color-text-main)] dark:text-white shadow-sm hover:bg-[var(--color-bg-main)] transition-all"
                                     >
                                         Retour
                                     </button>
@@ -1041,7 +1078,7 @@ export const ConsultationPage: React.FC<ConsultationPageProps> = ({
                                 <button
                                     onClick={currentStep === 7 ? handleComplete : nextStep}
                                     disabled={isSaving || (currentStep === 1 && !patientId)}
-                                    className="px-8 py-2.5 bg-primary text-[#0d1b19] rounded-xl font-black text-[10px] uppercase tracking-[0.2em] shadow-lg hover:brightness-105 transition-all flex items-center gap-2 shadow-primary/20 disabled:opacity-50"
+                                    className="px-8 py-2.5 bg-[var(--color-primary)] text-[#0d1b19] rounded-xl font-black text-[10px] uppercase tracking-[0.2em] shadow-lg hover:brightness-105 transition-all flex items-center gap-2 shadow-[var(--color-primary)]/20 disabled:opacity-50"
                                 >
                                     {isSaving ? 'Enregistrement...' : currentStep === 7 ? 'Terminer' : 'Étape Suivante'}
                                     <span className="material-symbols-outlined text-sm">
@@ -1057,59 +1094,59 @@ export const ConsultationPage: React.FC<ConsultationPageProps> = ({
                 <aside className="w-80 flex-shrink-0 hidden xl:block">
                     <div className="sticky top-24 flex flex-col gap-6">
                         {!patientId ? (
-                            <div className="bg-white dark:bg-[#152a26] rounded-2xl p-8 shadow-md border border-[#e7f3f1] dark:border-[#1e3a36] text-center flex flex-col items-center gap-4">
-                                <div className="size-20 rounded-2xl bg-[#f6f8f8] dark:bg-white/5 flex items-center justify-center text-[#4c9a8d]">
+                            <div className="bg-[var(--color-bg-surface)] dark:bg-[var(--color-dark-bg-surface)] rounded-2xl p-8 shadow-md border border-[var(--color-border)] dark:border-[var(--color-dark-border)] text-center flex flex-col items-center gap-4">
+                                <div className="size-20 rounded-2xl bg-[var(--color-bg-main)] dark:bg-white/5 flex items-center justify-center text-[var(--color-text-muted)]">
                                     <span className="material-symbols-outlined text-4xl">person_search</span>
                                 </div>
                                 <div>
-                                    <h4 className="text-sm font-black text-[#0d1b19] dark:text-white uppercase tracking-tight">Patient non sélectionné</h4>
-                                    <p className="text-[10px] font-black text-[#4c9a8d] uppercase tracking-widest mt-2 px-4 leading-relaxed">Veuillez rechercher et sélectionner un patient à gauche pour continuer.</p>
+                                    <h4 className="text-sm font-black text-[var(--color-text-main)] dark:text-white uppercase tracking-tight">Patient non sélectionné</h4>
+                                    <p className="text-[10px] font-black text-[var(--color-text-muted)] uppercase tracking-widest mt-2 px-4 leading-relaxed">Veuillez rechercher et sélectionner un patient à gauche pour continuer.</p>
                                 </div>
                             </div>
                         ) : (
-                            <div className="bg-white dark:bg-[#152a26] rounded-2xl p-6 shadow-md border border-[#e7f3f1] dark:border-[#1e3a36] text-left animate-in fade-in zoom-in duration-500">
+                            <div className="bg-[var(--color-bg-surface)] dark:bg-[var(--color-dark-bg-surface)] rounded-2xl p-6 shadow-md border border-[var(--color-border)] dark:border-[var(--color-dark-border)] text-left animate-in fade-in zoom-in duration-500">
                                 <div className="flex items-center gap-4 mb-6">
-                                    <div className="size-16 rounded-2xl bg-[#42f0d3]/10 flex items-center justify-center text-primary text-xl font-black shadow-md border-2 border-white dark:border-[#1e3a36]">
+                                    <div className="size-16 rounded-2xl bg-[var(--color-primary)]/10 flex items-center justify-center text-[var(--color-primary)] text-xl font-black shadow-md border-2 border-white dark:border-[var(--color-dark-border)]">
                                         {patientInfo?.full_name?.split(' ').map((n: string) => n[0]).join('').slice(0, 2) || '...'}
                                     </div>
                                     <div>
-                                        <h4 className="text-lg font-black text-[#0d1b19] dark:text-white tracking-tight">{patientInfo?.full_name || 'Patient'}</h4>
-                                        <p className="text-[#4c9a8d] text-[10px] font-black uppercase tracking-widest">
+                                        <h4 className="text-lg font-black text-[var(--color-text-main)] dark:text-white tracking-tight">{patientInfo?.full_name || 'Patient'}</h4>
+                                        <p className="text-[var(--color-text-muted)] text-[10px] font-black uppercase tracking-widest">
                                             {patientInfo?.age || '?'} ans • {patientInfo?.gender === 'Male' ? 'Homme' : 'Femme'} • {patientInfo?.nationality || '---'}
                                         </p>
                                     </div>
                                 </div>
 
                                 <div className="space-y-4">
-                                    <div className="p-4 bg-[#f6f8f8] dark:bg-[#10221f] rounded-2xl border border-[#e7f3f1] dark:border-[#1e3a36] shadow-inner">
-                                        <p className="text-[9px] uppercase font-black text-[#4c9a8d] mb-1 tracking-widest">Dernière TA</p>
+                                    <div className="p-4 bg-[var(--color-bg-main)] dark:bg-[var(--color-dark-bg-main)] rounded-2xl border border-[var(--color-border)] dark:border-[var(--color-dark-border)] shadow-inner">
+                                        <p className="text-[9px] uppercase font-black text-[var(--color-text-muted)] mb-1 tracking-widest">Dernière TA</p>
                                         <div className="flex items-baseline justify-between">
-                                            <span className="text-2xl font-black text-[#0d1b19] dark:text-white">
+                                            <span className="text-2xl font-black text-[var(--color-text-main)] dark:text-white">
                                                 {latestExamData ? `${latestExamData.bp_sys}/${latestExamData.bp_dia}` : '--/--'}
                                             </span>
                                             {latestExamData && (
-                                                <span className={`px-1.5 py-0.5 rounded text-[9px] font-black uppercase ${parseInt(latestExamData.bp_sys) > 130 ? 'bg-red-50 text-red-500' : 'bg-green-50 text-green-500'
+                                                <span className={`px-1.5 py-0.5 rounded text-[9px] font-black uppercase ${parseInt(latestExamData.bp_sys) > 130 ? 'bg-[var(--color-danger)]/10 text-[var(--color-danger)]' : 'bg-[var(--color-success)]/10 text-[var(--color-success)]'
                                                     }`}>
                                                     {parseInt(latestExamData.bp_sys) > 130 ? 'Élevé' : 'Normal'}
                                                 </span>
                                             )}
                                         </div>
                                     </div>
-                                    <div className="p-4 bg-[#f6f8f8] dark:bg-[#10221f] rounded-2xl border border-[#e7f3f1] dark:border-[#1e3a36] shadow-inner">
-                                        <p className="text-[9px] uppercase font-black text-[#4c9a8d] mb-1 tracking-widest">Poids Actuel</p>
+                                    <div className="p-4 bg-[var(--color-bg-main)] dark:bg-[var(--color-dark-bg-main)] rounded-2xl border border-[var(--color-border)] dark:border-[var(--color-dark-border)] shadow-inner">
+                                        <p className="text-[9px] uppercase font-black text-[var(--color-text-muted)] mb-1 tracking-widest">Poids Actuel</p>
                                         <div className="flex items-baseline justify-between">
-                                            <span className="text-2xl font-black text-[#0d1b19] dark:text-white">
+                                            <span className="text-2xl font-black text-[var(--color-text-main)] dark:text-white">
                                                 {latestExamData?.weight ? `${latestExamData.weight} kg` : '--- kg'}
                                             </span>
-                                            <span className="px-1.5 py-0.5 bg-green-50 text-green-500 rounded text-[9px] font-black uppercase">Stable</span>
+                                            <span className="px-1.5 py-0.5 bg-[var(--color-success)]/10 text-[var(--color-success)] rounded text-[9px] font-black uppercase">Stable</span>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="mt-6 pt-6 border-t border-dashed border-[#e7f3f1] dark:border-[#1e3a36]">
+                                <div className="mt-6 pt-6 border-t border-dashed border-[var(--color-border)] dark:border-[var(--color-dark-border)]">
                                     <button
                                         onClick={() => patientInfo?.id && onViewDetails?.(patientInfo.id.toString())}
-                                        className="w-full text-[10px] font-black uppercase tracking-[0.2em] text-primary hover:underline flex items-center justify-center gap-2 transition-all"
+                                        className="w-full text-[10px] font-black uppercase tracking-[0.2em] text-[var(--color-primary)] hover:underline flex items-center justify-center gap-2 transition-all"
                                     >
                                         <span className="material-symbols-outlined text-sm">open_in_new</span> Voir Dossier Complet
                                     </button>
@@ -1118,12 +1155,12 @@ export const ConsultationPage: React.FC<ConsultationPageProps> = ({
                         )}
 
                         {latestExamData && (
-                            <div className="bg-primary/10 dark:bg-primary/5 rounded-2xl border border-primary/20 p-5 text-left animate-in fade-in slide-in-from-bottom-4 duration-500">
+                            <div className="bg-[var(--color-primary)]/10 dark:bg-[var(--color-primary)]/5 rounded-2xl border border-[var(--color-primary)]/20 p-5 text-left animate-in fade-in slide-in-from-bottom-4 duration-500">
                                 <div className="flex items-center gap-2 mb-3">
-                                    <span className="material-symbols-outlined text-primary text-sm">sticky_note_2</span>
+                                    <span className="material-symbols-outlined text-[var(--color-primary)] text-sm">sticky_note_2</span>
                                     <h5 className="font-black text-[10px] uppercase tracking-widest">Dernière Note</h5>
                                 </div>
-                                <p className="text-xs text-[#0d1b19]/70 dark:text-white/70 leading-relaxed italic font-medium">
+                                <p className="text-xs text-[var(--color-text-main)]/70 dark:text-white/70 leading-relaxed italic font-medium">
                                     {latestExamData.notes || "Aucune note disponible."}
                                 </p>
                             </div>
@@ -1132,8 +1169,8 @@ export const ConsultationPage: React.FC<ConsultationPageProps> = ({
                 </aside>
             </main>
 
-            <footer className="mt-auto py-4 px-10 border-t border-[#e7f3f1] dark:border-[#1e3a36] bg-white dark:bg-[#152a26] text-center">
-                <p className="text-[10px] text-[#4c9a8d] font-black uppercase tracking-[0.3em]">
+            <footer className="mt-auto py-4 px-10 border-t border-[var(--color-border)] dark:border-[var(--color-dark-border)] bg-[var(--color-bg-surface)] dark:bg-[var(--color-dark-bg-surface)] text-center">
+                <p className="text-[10px] text-[var(--color-text-muted)] font-black uppercase tracking-[0.3em]">
                     © 2024 CardioMed . Système de Gestion Médicale Sécurisé.
                 </p>
             </footer>
