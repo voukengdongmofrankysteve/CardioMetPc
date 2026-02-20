@@ -88,7 +88,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
         <div className="flex-1 overflow-y-auto p-8 bg-[#f6f8f8] dark:bg-[#10221f]">
             {/* Header */}
             <div className="mb-8 text-left">
-                <h2 className="text-[#0d1b19] dark:text-white text-3xl font-black tracking-tight">Bienvenue, Dr. Ebogo</h2>
+                <h2 className="text-[#0d1b19] dark:text-white text-3xl font-black tracking-tight">Bienvenue, Dr. Cyrille Mbida</h2>
                 <p className="text-[#4c9a8d] dark:text-[#4c9a8d] mt-1 font-medium">Voici l'état actuel de votre pratique cardiologique aujourd'hui.</p>
             </div>
 

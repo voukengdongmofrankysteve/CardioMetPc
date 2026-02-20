@@ -1,10 +1,10 @@
 import Database from '@tauri-apps/plugin-sql';
 
 // Remote Connection (Legacy)
-const DB_CONNECTION = 'mysql://u111881942_cardio:51405492fSteve%40@82.197.82.156/u111881942_cardio';
+//const DB_CONNECTION = 'mysql://u111881942_cardio:51405492fSteve%40@82.197.82.156/u111881942_cardio';
 
 // Local Connection
-//const DB_CONNECTION = 'mysql://root:51405492fS%40@localhost/cardio_ebogo';
+const DB_CONNECTION = 'mysql://root:51405492fS%40@localhost/cardio_ebogo';
 
 export class DatabaseService {
     private static instance: Database | null = null;
@@ -167,6 +167,18 @@ export class DatabaseService {
         }
     }
 
+    static async deletePatient(id: number): Promise<void> {
+        const db = await this.getDb();
+        // Delete related records first to avoid foreign key constraints issues
+        await db.execute('DELETE FROM emergency_contacts WHERE patient_db_id = ?', [id]);
+        await db.execute('DELETE FROM risk_factors WHERE patient_db_id = ?', [id]);
+        // Assuming CASCADE DELETE is set up for consultations and appointments
+        // If not, these would need explicit deletion as well:
+        // await db.execute('DELETE FROM consultations WHERE patient_db_id = ?', [id]);
+        // await db.execute('DELETE FROM appointments WHERE patient_db_id = ?', [id]);
+        await db.execute('DELETE FROM patients WHERE id = ?', [id]);
+    }
+
     // Search
     static async searchPatients(query: string): Promise<any[]> {
         const db = await this.getDb();
@@ -180,6 +192,13 @@ export class DatabaseService {
     // Consultation Management
     static async createConsultation(data: any): Promise<number> {
         const db = await this.getDb();
+
+        // Helper function to convert empty strings to null for numeric fields
+        const toNumeric = (value: any): number | null => {
+            if (value === '' || value === null || value === undefined) return null;
+            const num = parseFloat(value);
+            return isNaN(num) ? null : num;
+        };
 
         // 1. Insert Consultation
         const consultResult = await db.execute(
@@ -196,22 +215,37 @@ export class DatabaseService {
                     consultation_id, bp_sys, bp_dia, heart_rate, weight, height, temp, spo2, bmi, notes
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                 [
-                    consultId, data.exam.bpSys, data.exam.bpDia, data.exam.heartRate,
-                    data.exam.weight, data.exam.height, data.exam.temp, data.exam.spo2,
-                    data.exam.bmi, data.exam.notes
+                    consultId, 
+                    toNumeric(data.exam.bpSys), 
+                    toNumeric(data.exam.bpDia), 
+                    toNumeric(data.exam.heartRate),
+                    toNumeric(data.exam.weight), 
+                    toNumeric(data.exam.height), 
+                    toNumeric(data.exam.temp), 
+                    toNumeric(data.exam.spo2),
+                    toNumeric(data.exam.bmi), 
+                    data.exam.notes || null
                 ]
             );
         }
 
         // 3. Insert ECG/ETT Exam
         if (data.ecg || data.ett) {
+            const ecgFilesJson = data.ecg?.files ? JSON.stringify(data.ecg.files) : null;
+            const ettFilesJson = data.ett?.files ? JSON.stringify(data.ett.files) : null;
+            
             await db.execute(
                 `INSERT INTO ecg_ett_exams (
-                    consultation_id, ecg_interpretation, ett_fevg, ett_lvedd, ett_interpretation
-                ) VALUES (?, ?, ?, ?, ?)`,
+                    consultation_id, ecg_interpretation, ett_fevg, ett_lvedd, ett_interpretation, ecg_files, ett_files
+                ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
                 [
-                    consultId, data.ecg?.interpretation, data.ett?.ef,
-                    data.ett?.lvedd, data.ett?.interpretation
+                    consultId, 
+                    data.ecg?.interpretation || null, 
+                    toNumeric(data.ett?.ef),
+                    toNumeric(data.ett?.lvedd), 
+                    data.ett?.interpretation || null, 
+                    ecgFilesJson, 
+                    ettFilesJson
                 ]
             );
         }
@@ -223,9 +257,11 @@ export class DatabaseService {
                     consultation_id, primary_diagnosis, secondary_diagnoses, nyha_class, notes
                 ) VALUES (?, ?, ?, ?, ?)`,
                 [
-                    consultId, data.diagnostic.primaryDiagnosis,
-                    JSON.stringify(data.diagnostic.secondaryDiagnoses),
-                    data.diagnostic.nyha, data.diagnostic.notes
+                    consultId, 
+                    data.diagnostic.primaryDiagnosis || null,
+                    JSON.stringify(data.diagnostic.secondaryDiagnoses || []),
+                    data.diagnostic.nyha || null, 
+                    data.diagnostic.notes || null
                 ]
             );
         }
@@ -234,7 +270,12 @@ export class DatabaseService {
         if (data.scores) {
             await db.execute(
                 'INSERT INTO scores (consultation_id, chads_vasc, has_bled, cv_risk) VALUES (?, ?, ?, ?)',
-                [consultId, data.scores.chadsVasc, data.scores.hasBled, data.scores.cvRisk]
+                [
+                    consultId, 
+                    toNumeric(data.scores.chadsVasc), 
+                    toNumeric(data.scores.hasBled), 
+                    data.scores.cvRisk || null
+                ]
             );
         }
 
@@ -243,7 +284,13 @@ export class DatabaseService {
             for (const p of data.prescriptions) {
                 await db.execute(
                     'INSERT INTO prescriptions (consultation_id, drug, dosage, frequency, duration) VALUES (?, ?, ?, ?, ?)',
-                    [consultId, p.drug, p.dosage, p.frequency, p.duration]
+                    [
+                        consultId, 
+                        p.drug || null, 
+                        p.dosage || null, 
+                        p.frequency || null, 
+                        p.duration || null
+                    ]
                 );
             }
         }
@@ -343,6 +390,27 @@ export class DatabaseService {
                 [consultationId || null, med.name, med.dosage, med.frequency, fullDuration]
             );
         }
+    }
+
+    static async updatePrescription(prescription: any): Promise<void> {
+        const db = await this.getDb();
+        await db.execute(
+            `UPDATE prescriptions SET 
+                drug = ?, 
+                dosage = ?, 
+                frequency = ?, 
+                duration = ?,
+                instructions = ?
+            WHERE id = ?`,
+            [
+                prescription.drug,
+                prescription.dosage,
+                prescription.frequency,
+                prescription.duration,
+                prescription.instructions,
+                prescription.id
+            ]
+        );
     }
 
     static async getConsultationDetails(id: number): Promise<any> {
@@ -498,7 +566,7 @@ export class DatabaseService {
         `, [patientId]);
     }
 
-    static async updatePrescription(data: {
+/*     static async updatePrescription(data: {
         id: number;
         drug: string;
         dosage: string;
@@ -510,7 +578,7 @@ export class DatabaseService {
             'UPDATE prescriptions SET drug = ?, dosage = ?, frequency = ?, duration = ? WHERE id = ?',
             [data.drug, data.dosage, data.frequency, data.duration, data.id]
         );
-    }
+    } */
 
     static async getLatestExamDataForPatient(patientDbId: number): Promise<any | null> {
         const db = await this.getDb();

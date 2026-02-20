@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '../../components/ui/Button';
 import { DatabaseService } from '../../services/database';
+import { FileStorageService } from '../../services/fileStorage';
+import moment from 'moment';
 
 interface ConsultationDetailsPageProps {
     consultationId?: string;
@@ -45,13 +47,48 @@ export const ConsultationDetailsPage: React.FC<ConsultationDetailsPageProps> = (
         );
     }
 
-    const formatDate = (dateStr: string) => {
-        return new Date(dateStr).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
-    };
+
 
     const secondaryDiagnoses = consultation.diagnostic?.secondary_diagnoses
         ? JSON.parse(consultation.diagnostic.secondary_diagnoses)
         : [];
+
+    const ecgFiles = consultation.ecg_ett?.ecg_files 
+        ? JSON.parse(consultation.ecg_ett.ecg_files) 
+        : [];
+    
+    const ettFiles = consultation.ecg_ett?.ett_files 
+        ? JSON.parse(consultation.ecg_ett.ett_files) 
+        : [];
+
+    const handleDownloadFile = async (filePath: string, fileName: string) => {
+        try {
+            const fileData = await FileStorageService.readFile(filePath);
+            const blob = new Blob([fileData]);
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName || 'fichier_medical';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error('Error downloading file:', error);
+            alert('Erreur lors du téléchargement du fichier: ' + (error instanceof Error ? error.message : String(error)));
+        }
+    };
+
+    const getFileNameFromPath = (path: string): string => {
+        const parts = path.split('/');
+        return parts[parts.length - 1];
+    };
+
+    const getFileExtension = (fileName: string): string => {
+        const parts = fileName.split('.');
+        return parts[parts.length - 1].toLowerCase();
+    };
 
     return (
         <div className="flex flex-col flex-1 bg-[#f6f8f8] dark:bg-[#10221f] font-sans text-[#0d1b19] dark:text-white min-h-full print:bg-white print:h-auto">
@@ -87,14 +124,15 @@ export const ConsultationDetailsPage: React.FC<ConsultationDetailsPageProps> = (
                     <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-[#4c9a8d] text-left print:hidden">
                         <span className="hover:text-primary cursor-pointer" onClick={onBack}>Consultations</span>
                         <span className="material-symbols-outlined text-xs">chevron_right</span>
-                        <span className="text-[#0d1b19] dark:text-white">Détails du {formatDate(consultation.created_at)}</span>
+                        <span className="text-[#0d1b19] dark:text-white">Détails du {consultation.created_at ? moment(consultation.created_at, 'YYYY-MM-DD HH:mm:ss.S Z').format('DD/MM/YYYY [à] HH:mm') : 'N/A'}</span>
+                        
                     </div>
 
                     <div className="bg-white dark:bg-[#152a26] rounded-2xl shadow-md border border-[#e7f3f1] dark:border-[#1e3a36] overflow-hidden flex flex-col text-left print:shadow-none print:border-none print:bg-white print:text-black">
                         <div className="p-6 border-b border-[#f6f8f8] dark:border-white/5 flex items-center justify-between bg-[#f8fcfb] dark:bg-white/5 print:bg-white print:border-b-2 print:border-black">
                             <div>
                                 <h3 className="text-xl font-black text-[#0d1b19] dark:text-white uppercase tracking-tight print:text-black">Rapport de Consultation</h3>
-                                <p className="text-[10px] font-black text-[#4c9a8d] uppercase tracking-widest mt-1 print:text-black">Patient: {consultation.patient_name} • {formatDate(consultation.created_at)}</p>
+                                <p className="text-[10px] font-black text-[#4c9a8d] uppercase tracking-widest mt-1 print:text-black">Patient: {consultation.patient_name} • {consultation.created_at ? moment(consultation.created_at, 'YYYY-MM-DD HH:mm:ss.S Z').format('DD/MM/YYYY [à] HH:mm') : 'N/A'}</p>
                             </div>
                             <Button icon="print" variant="outline" size="sm" onClick={() => window.print()} className="print:hidden">Imprimer</Button>
                         </div>
@@ -138,6 +176,38 @@ export const ConsultationDetailsPage: React.FC<ConsultationDetailsPageProps> = (
                                     <div className="p-6 bg-[#f6f8f8] dark:bg-[#10221f] rounded-2xl border border-[#e7f3f1] dark:border-[#1e3a36] print:bg-transparent print:border print:border-black print:p-4">
                                         <h5 className="text-xs font-black uppercase tracking-widest text-[#0d1b19] dark:text-white mb-4 print:text-black">Interprétation ECG</h5>
                                         <p className="text-xs text-[#0d1b19]/70 dark:text-white/70 italic print:text-black">"{consultation.ecg_ett?.ecg_interpretation || 'Aucune interprétation saisie.'}"</p>
+                                        
+                                        {ecgFiles.length > 0 && (
+                                            <div className="mt-4 space-y-2 print:hidden">
+                                                <p className="text-[9px] font-black uppercase tracking-widest text-[#4c9a8d] mb-2">Fichiers ECG ({ecgFiles.length})</p>
+                                                {ecgFiles.map((filePath: string, index: number) => {
+                                                    const fileName = getFileNameFromPath(filePath);
+                                                    const fileExt = getFileExtension(fileName);
+                                                    return (
+                                                        <div key={index} className="flex items-center justify-between p-3 bg-white dark:bg-[#152a26] rounded-xl border border-[#e7f3f1] dark:border-[#1e3a36] hover:border-[var(--color-primary)]/50 transition-all group">
+                                                            <div className="flex items-center gap-3 flex-1 min-w-0">
+                                                                <div className="size-8 rounded-lg bg-[var(--color-primary)]/10 flex items-center justify-center flex-shrink-0">
+                                                                    <span className="material-symbols-outlined text-[var(--color-primary)] text-sm">
+                                                                        {fileExt === 'pdf' ? 'picture_as_pdf' : 'image'}
+                                                                    </span>
+                                                                </div>
+                                                                <div className="flex-1 min-w-0">
+                                                                    <p className="text-xs font-bold text-[#0d1b19] dark:text-white truncate">{fileName}</p>
+                                                                    <p className="text-[9px] text-[#4c9a8d] uppercase">{fileExt}</p>
+                                                                </div>
+                                                            </div>
+                                                            <button
+                                                                onClick={() => handleDownloadFile(filePath, fileName)}
+                                                                className="size-8 rounded-lg flex items-center justify-center text-[#4c9a8d] hover:text-white hover:bg-[var(--color-primary)] transition-all flex-shrink-0"
+                                                                title="Télécharger"
+                                                            >
+                                                                <span className="material-symbols-outlined text-sm">download</span>
+                                                            </button>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
                                     </div>
                                     <div className="p-6 bg-[#f6f8f8] dark:bg-[#10221f] rounded-2xl border border-[#e7f3f1] dark:border-[#1e3a36] print:bg-transparent print:border print:border-black print:p-4">
                                         <h5 className="text-xs font-black uppercase tracking-widest text-[#0d1b19] dark:text-white mb-2 print:text-black">Échocardiographie (ETT)</h5>
@@ -146,6 +216,38 @@ export const ConsultationDetailsPage: React.FC<ConsultationDetailsPageProps> = (
                                             <span className="text-[#0d1b19] dark:text-white font-black print:text-black">{consultation.ecg_ett?.ett_fevg || '--'}%</span>
                                         </div>
                                         <p className="text-xs text-[#0d1b19]/70 dark:text-white/70 italic mt-4 print:text-black">"{consultation.ecg_ett?.ett_interpretation || 'Aucune interprétation saisie.'}"</p>
+                                        
+                                        {ettFiles.length > 0 && (
+                                            <div className="mt-4 space-y-2 print:hidden">
+                                                <p className="text-[9px] font-black uppercase tracking-widest text-[#4c9a8d] mb-2">Fichiers ETT ({ettFiles.length})</p>
+                                                {ettFiles.map((filePath: string, index: number) => {
+                                                    const fileName = getFileNameFromPath(filePath);
+                                                    const fileExt = getFileExtension(fileName);
+                                                    return (
+                                                        <div key={index} className="flex items-center justify-between p-3 bg-white dark:bg-[#152a26] rounded-xl border border-[#e7f3f1] dark:border-[#1e3a36] hover:border-[var(--color-primary)]/50 transition-all group">
+                                                            <div className="flex items-center gap-3 flex-1 min-w-0">
+                                                                <div className="size-8 rounded-lg bg-[var(--color-primary)]/10 flex items-center justify-center flex-shrink-0">
+                                                                    <span className="material-symbols-outlined text-[var(--color-primary)] text-sm">
+                                                                        {fileExt === 'pdf' ? 'picture_as_pdf' : 'image'}
+                                                                    </span>
+                                                                </div>
+                                                                <div className="flex-1 min-w-0">
+                                                                    <p className="text-xs font-bold text-[#0d1b19] dark:text-white truncate">{fileName}</p>
+                                                                    <p className="text-[9px] text-[#4c9a8d] uppercase">{fileExt}</p>
+                                                                </div>
+                                                            </div>
+                                                            <button
+                                                                onClick={() => handleDownloadFile(filePath, fileName)}
+                                                                className="size-8 rounded-lg flex items-center justify-center text-[#4c9a8d] hover:text-white hover:bg-[var(--color-primary)] transition-all flex-shrink-0"
+                                                                title="Télécharger"
+                                                            >
+                                                                <span className="material-symbols-outlined text-sm">download</span>
+                                                            </button>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </section>

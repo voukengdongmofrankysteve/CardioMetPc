@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { DatabaseService } from '../../services/database';
 import { generatePrescriptionPDF } from '../../services/prescriptionPDF';
+import { FileStorageService } from '../../services/fileStorage';
 
 interface ConsultationPageProps {
     patientId?: string; // This is the DB ID (number) or Patient Code (string)
@@ -110,6 +111,153 @@ export const ConsultationPage: React.FC<ConsultationPageProps> = ({
         hasFile: false
     });
 
+    const [ecgFiles, setEcgFiles] = useState<File[]>([]);
+    const [ettFiles, setEttFiles] = useState<File[]>([]);
+    const [ecgDragActive, setEcgDragActive] = useState(false);
+    const [ettDragActive, setEttDragActive] = useState(false);
+    const [ecgUploadError, setEcgUploadError] = useState<string>('');
+    const [ettUploadError, setEttUploadError] = useState<string>('');
+
+    const validateFiles = (files: FileList | null): { valid: File[], invalid: { file: File, reason: string }[] } => {
+        if (!files) return { valid: [], invalid: [] };
+        const fileArray = Array.from(files);
+        const valid: File[] = [];
+        const invalid: { file: File, reason: string }[] = [];
+
+        fileArray.forEach(file => {
+            const isValidType = file.type.startsWith('image/') || file.type === 'application/pdf';
+            const isValidSize = file.size <= 10 * 1024 * 1024;
+
+            if (!isValidType) {
+                invalid.push({ file, reason: 'Type de fichier non supporté' });
+            } else if (!isValidSize) {
+                invalid.push({ file, reason: `Fichier trop volumineux (${(file.size / (1024 * 1024)).toFixed(1)}MB > 10MB)` });
+            } else {
+                valid.push(file);
+            }
+        });
+
+        return { valid, invalid };
+    };
+
+    const handleEcgFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const { valid, invalid } = validateFiles(event.target.files);
+        
+        if (valid.length > 0) {
+            setEcgFiles(prev => [...prev, ...valid]);
+            setEcgData({ ...ecgData, hasFile: true });
+            setEcgUploadError('');
+        }
+        
+        if (invalid.length > 0) {
+            const errorMsg = invalid.map(({ file, reason }) => `${file.name}: ${reason}`).join(' • ');
+            setEcgUploadError(errorMsg);
+            setTimeout(() => setEcgUploadError(''), 5000);
+        }
+        
+        event.target.value = '';
+    };
+
+    const handleEttFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const { valid, invalid } = validateFiles(event.target.files);
+        
+        if (valid.length > 0) {
+            setEttFiles(prev => [...prev, ...valid]);
+            setEttData({ ...ettData, hasFile: true });
+            setEttUploadError('');
+        }
+        
+        if (invalid.length > 0) {
+            const errorMsg = invalid.map(({ file, reason }) => `${file.name}: ${reason}`).join(' • ');
+            setEttUploadError(errorMsg);
+            setTimeout(() => setEttUploadError(''), 5000);
+        }
+        
+        event.target.value = '';
+    };
+
+    const handleEcgDragEnter = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setEcgDragActive(true);
+    };
+
+    const handleEcgDragLeave = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setEcgDragActive(false);
+    };
+
+    const handleEcgDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+    };
+
+    const handleEcgDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setEcgDragActive(false);
+        
+        const { valid, invalid } = validateFiles(e.dataTransfer.files);
+        
+        if (valid.length > 0) {
+            setEcgFiles(prev => [...prev, ...valid]);
+            setEcgData({ ...ecgData, hasFile: true });
+            setEcgUploadError('');
+        }
+        
+        if (invalid.length > 0) {
+            const errorMsg = invalid.map(({ file, reason }) => `${file.name}: ${reason}`).join(' • ');
+            setEcgUploadError(errorMsg);
+            setTimeout(() => setEcgUploadError(''), 5000);
+        }
+    };
+
+    const handleEttDragEnter = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setEttDragActive(true);
+    };
+
+    const handleEttDragLeave = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setEttDragActive(false);
+    };
+
+    const handleEttDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+    };
+
+    const handleEttDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setEttDragActive(false);
+        
+        const { valid, invalid } = validateFiles(e.dataTransfer.files);
+        
+        if (valid.length > 0) {
+            setEttFiles(prev => [...prev, ...valid]);
+            setEttData({ ...ettData, hasFile: true });
+            setEttUploadError('');
+        }
+        
+        if (invalid.length > 0) {
+            const errorMsg = invalid.map(({ file, reason }) => `${file.name}: ${reason}`).join(' • ');
+            setEttUploadError(errorMsg);
+            setTimeout(() => setEttUploadError(''), 5000);
+        }
+    };
+
+    const removeEcgFile = (index: number) => {
+        setEcgFiles(prev => prev.filter((_, i) => i !== index));
+    };
+
+    const removeEttFile = (index: number) => {
+        setEttFiles(prev => prev.filter((_, i) => i !== index));
+    };
+
     // Step 4: Scores State
     const [scores, setScores] = useState({
         chadsVasc: 0,
@@ -153,22 +301,58 @@ export const ConsultationPage: React.FC<ConsultationPageProps> = ({
                 }
             }
 
+            // Save ECG files
+            let ecgFilePaths: string[] = [];
+            if (ecgFiles.length > 0) {
+                try {
+                    ecgFilePaths = await FileStorageService.saveFiles(ecgFiles, 'ECG');
+                    console.log('ECG files saved:', ecgFilePaths);
+                } catch (error) {
+                    console.error('Error saving ECG files:', error);
+                    const continueAnyway = confirm(
+                        'Erreur lors de la sauvegarde des fichiers ECG. Voulez-vous continuer sans les fichiers ?'
+                    );
+                    if (!continueAnyway) {
+                        throw error;
+                    }
+                }
+            }
+
+            // Save ETT files
+            let ettFilePaths: string[] = [];
+            if (ettFiles.length > 0) {
+                try {
+                    ettFilePaths = await FileStorageService.saveFiles(ettFiles, 'ETT');
+                    console.log('ETT files saved:', ettFilePaths);
+                } catch (error) {
+                    console.error('Error saving ETT files:', error);
+                    const continueAnyway = confirm(
+                        'Erreur lors de la sauvegarde des fichiers ETT. Voulez-vous continuer sans les fichiers ?'
+                    );
+                    if (!continueAnyway) {
+                        throw error;
+                    }
+                }
+            }
+
             await DatabaseService.createConsultation({
                 patient_db_id: parseInt(patientId),
-                doctor_db_id: 1, // Default admin doctor
+                doctor_db_id: 1,
                 reason: consultationReason || 'Routine Cardiology Follow-up',
                 status: 'Completed',
                 exam: { ...examData, bmi: bmiValue },
-                ecg: ecgData,
-                ett: ettData,
+                ecg: { ...ecgData, files: ecgFilePaths },
+                ett: { ...ettData, files: ettFilePaths },
                 diagnostic: { ...diagnosticData, nyha: scores.nyha },
                 scores: scores,
                 prescriptions: prescriptions
             });
+            
             if (onComplete) onComplete();
         } catch (error) {
             console.error('Failed to save consultation:', error);
-            alert('Erreur lors de la sauvegarde de la consultation : ' + (error instanceof Error ? error.message : String(error)));
+            const errorMsg = error instanceof Error ? error.message : String(error);
+            alert('Erreur lors de la sauvegarde de la consultation:\n\n' + errorMsg);
         } finally {
             setIsSaving(false);
         }
@@ -697,14 +881,83 @@ export const ConsultationPage: React.FC<ConsultationPageProps> = ({
                                                 <h4 className="font-black text-xs uppercase tracking-[0.2em] text-[var(--color-text-muted)]">Électrocardiogramme (ECG)</h4>
                                             </div>
 
-                                            <div className="aspect-video rounded-2xl border-2 border-dashed border-[var(--color-border)] dark:border-[var(--color-dark-border)] bg-[var(--color-bg-main)] dark:bg-[var(--color-dark-bg-main)] flex flex-col items-center justify-center gap-3 group hover:border-[var(--color-primary)]/50 transition-all cursor-pointer">
-                                                <div className="size-12 rounded-xl bg-[var(--color-bg-surface)] dark:bg-[var(--color-dark-bg-surface)] flex items-center justify-center text-[var(--color-text-muted)] group-hover:text-[var(--color-primary)] transition-all shadow-sm">
-                                                    <span className="material-symbols-outlined text-3xl">upload_file</span>
-                                                </div>
-                                                <div className="text-center">
-                                                    <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-text-main)] dark:text-white">Téléverser l'examen ECG</p>
-                                                    <p className="text-[9px] font-bold text-[var(--color-text-muted)] mt-1">Images ou PDF (Max 10MB)</p>
-                                                </div>
+                                            <div>
+                                                <input
+                                                    type="file"
+                                                    id="ecg-upload"
+                                                    accept="image/*,.pdf"
+                                                    multiple
+                                                    onChange={handleEcgFileUpload}
+                                                    className="hidden"
+                                                />
+                                                <label
+                                                    htmlFor="ecg-upload"
+                                                    onDragEnter={handleEcgDragEnter}
+                                                    onDragLeave={handleEcgDragLeave}
+                                                    onDragOver={handleEcgDragOver}
+                                                    onDrop={handleEcgDrop}
+                                                    className={`aspect-video rounded-2xl border-2 border-dashed ${
+                                                        ecgDragActive 
+                                                            ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/10 scale-105' 
+                                                            : 'border-[var(--color-border)] dark:border-[var(--color-dark-border)] bg-[var(--color-bg-main)] dark:bg-[var(--color-dark-bg-main)]'
+                                                    } flex flex-col items-center justify-center gap-3 group hover:border-[var(--color-primary)]/50 transition-all cursor-pointer`}
+                                                >
+                                                    <div className={`size-12 rounded-xl bg-[var(--color-bg-surface)] dark:bg-[var(--color-dark-bg-surface)] flex items-center justify-center ${
+                                                        ecgDragActive ? 'text-[var(--color-primary)] scale-110' : 'text-[var(--color-text-muted)]'
+                                                    } group-hover:text-[var(--color-primary)] transition-all shadow-sm`}>
+                                                        <span className="material-symbols-outlined text-3xl">
+                                                            {ecgDragActive ? 'file_download' : 'upload_file'}
+                                                        </span>
+                                                    </div>
+                                                    <div className="text-center">
+                                                        <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-text-main)] dark:text-white">
+                                                            {ecgDragActive ? 'Déposer les fichiers ici' : 'Téléverser l\'examen ECG'}
+                                                        </p>
+                                                        <p className="text-[9px] font-bold text-[var(--color-text-muted)] mt-1">
+                                                            {ecgDragActive ? 'Relâchez pour téléverser' : 'Cliquez ou glissez-déposez • Images ou PDF (Max 10MB)'}
+                                                        </p>
+                                                    </div>
+                                                </label>
+                                                
+                                                {ecgUploadError && (
+                                                    <div className="mt-3 p-3 bg-[var(--color-danger)]/10 border border-[var(--color-danger)]/30 rounded-xl flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                                                        <span className="material-symbols-outlined text-[var(--color-danger)] text-lg flex-shrink-0">error</span>
+                                                        <div className="flex-1">
+                                                            <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-danger)] mb-1">Erreur de téléversement</p>
+                                                            <p className="text-[9px] font-bold text-[var(--color-danger)]/80 leading-relaxed">{ecgUploadError}</p>
+                                                        </div>
+                                                        <button 
+                                                            onClick={() => setEcgUploadError('')}
+                                                            className="size-6 rounded-lg flex items-center justify-center text-[var(--color-danger)] hover:bg-[var(--color-danger)]/20 transition-all flex-shrink-0"
+                                                        >
+                                                            <span className="material-symbols-outlined text-sm">close</span>
+                                                        </button>
+                                                    </div>
+                                                )}
+
+                                                {ecgFiles.length > 0 && (
+                                                    <div className="mt-4 space-y-2">
+                                                        {ecgFiles.map((file, index) => (
+                                                            <div key={index} className="flex items-center justify-between p-3 bg-[var(--color-bg-surface)] dark:bg-[var(--color-dark-bg-surface)] rounded-xl border border-[var(--color-border)] dark:border-[var(--color-dark-border)] animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                                                <div className="flex items-center gap-3">
+                                                                    <span className="material-symbols-outlined text-[var(--color-primary)]">
+                                                                        {file.type === 'application/pdf' ? 'picture_as_pdf' : 'image'}
+                                                                    </span>
+                                                                    <div>
+                                                                        <p className="text-xs font-bold text-[var(--color-text-main)] dark:text-white">{file.name}</p>
+                                                                        <p className="text-[9px] text-[var(--color-text-muted)]">{(file.size / 1024).toFixed(1)} KB</p>
+                                                                    </div>
+                                                                </div>
+                                                                <button
+                                                                    onClick={() => removeEcgFile(index)}
+                                                                    className="size-8 rounded-lg flex items-center justify-center text-[var(--color-text-muted)] hover:text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10 transition-all"
+                                                                >
+                                                                    <span className="material-symbols-outlined text-sm">delete</span>
+                                                                </button>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
                                             </div>
 
                                             <div className="space-y-2">
@@ -725,14 +978,83 @@ export const ConsultationPage: React.FC<ConsultationPageProps> = ({
                                                 <h4 className="font-black text-xs uppercase tracking-[0.2em] text-[var(--color-text-muted)]">Échocardiographie (ETT)</h4>
                                             </div>
 
-                                            <div className="aspect-video rounded-2xl border-2 border-dashed border-[var(--color-border)] dark:border-[var(--color-dark-border)] bg-[var(--color-bg-main)] dark:bg-[var(--color-dark-bg-main)] flex flex-col items-center justify-center gap-3 group hover:border-[var(--color-primary)]/50 transition-all cursor-pointer">
-                                                <div className="size-12 rounded-xl bg-[var(--color-bg-surface)] dark:bg-[var(--color-dark-bg-surface)] flex items-center justify-center text-[var(--color-text-muted)] group-hover:text-[var(--color-primary)] transition-all shadow-sm">
-                                                    <span className="material-symbols-outlined text-3xl">add_photo_alternate</span>
-                                                </div>
-                                                <div className="text-center">
-                                                    <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-text-main)] dark:text-white">Téléverser les clichés ETT</p>
-                                                    <p className="text-[9px] font-bold text-[var(--color-text-muted)] mt-1">Séquences ou rapports</p>
-                                                </div>
+                                            <div>
+                                                <input
+                                                    type="file"
+                                                    id="ett-upload"
+                                                    accept="image/*,.pdf"
+                                                    multiple
+                                                    onChange={handleEttFileUpload}
+                                                    className="hidden"
+                                                />
+                                                <label
+                                                    htmlFor="ett-upload"
+                                                    onDragEnter={handleEttDragEnter}
+                                                    onDragLeave={handleEttDragLeave}
+                                                    onDragOver={handleEttDragOver}
+                                                    onDrop={handleEttDrop}
+                                                    className={`aspect-video rounded-2xl border-2 border-dashed ${
+                                                        ettDragActive 
+                                                            ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/10 scale-105' 
+                                                            : 'border-[var(--color-border)] dark:border-[var(--color-dark-border)] bg-[var(--color-bg-main)] dark:bg-[var(--color-dark-bg-main)]'
+                                                    } flex flex-col items-center justify-center gap-3 group hover:border-[var(--color-primary)]/50 transition-all cursor-pointer`}
+                                                >
+                                                    <div className={`size-12 rounded-xl bg-[var(--color-bg-surface)] dark:bg-[var(--color-dark-bg-surface)] flex items-center justify-center ${
+                                                        ettDragActive ? 'text-[var(--color-primary)] scale-110' : 'text-[var(--color-text-muted)]'
+                                                    } group-hover:text-[var(--color-primary)] transition-all shadow-sm`}>
+                                                        <span className="material-symbols-outlined text-3xl">
+                                                            {ettDragActive ? 'file_download' : 'add_photo_alternate'}
+                                                        </span>
+                                                    </div>
+                                                    <div className="text-center">
+                                                        <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-text-main)] dark:text-white">
+                                                            {ettDragActive ? 'Déposer les fichiers ici' : 'Téléverser les clichés ETT'}
+                                                        </p>
+                                                        <p className="text-[9px] font-bold text-[var(--color-text-muted)] mt-1">
+                                                            {ettDragActive ? 'Relâchez pour téléverser' : 'Cliquez ou glissez-déposez • Séquences ou rapports (Max 10MB)'}
+                                                        </p>
+                                                    </div>
+                                                </label>
+                                                
+                                                {ettUploadError && (
+                                                    <div className="mt-3 p-3 bg-[var(--color-danger)]/10 border border-[var(--color-danger)]/30 rounded-xl flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                                                        <span className="material-symbols-outlined text-[var(--color-danger)] text-lg flex-shrink-0">error</span>
+                                                        <div className="flex-1">
+                                                            <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-danger)] mb-1">Erreur de téléversement</p>
+                                                            <p className="text-[9px] font-bold text-[var(--color-danger)]/80 leading-relaxed">{ettUploadError}</p>
+                                                        </div>
+                                                        <button 
+                                                            onClick={() => setEttUploadError('')}
+                                                            className="size-6 rounded-lg flex items-center justify-center text-[var(--color-danger)] hover:bg-[var(--color-danger)]/20 transition-all flex-shrink-0"
+                                                        >
+                                                            <span className="material-symbols-outlined text-sm">close</span>
+                                                        </button>
+                                                    </div>
+                                                )}
+
+                                                {ettFiles.length > 0 && (
+                                                    <div className="mt-4 space-y-2">
+                                                        {ettFiles.map((file, index) => (
+                                                            <div key={index} className="flex items-center justify-between p-3 bg-[var(--color-bg-surface)] dark:bg-[var(--color-dark-bg-surface)] rounded-xl border border-[var(--color-border)] dark:border-[var(--color-dark-border)] animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                                                <div className="flex items-center gap-3">
+                                                                    <span className="material-symbols-outlined text-[var(--color-primary)]">
+                                                                        {file.type === 'application/pdf' ? 'picture_as_pdf' : 'image'}
+                                                                    </span>
+                                                                    <div>
+                                                                        <p className="text-xs font-bold text-[var(--color-text-main)] dark:text-white">{file.name}</p>
+                                                                        <p className="text-[9px] text-[var(--color-text-muted)]">{(file.size / 1024).toFixed(1)} KB</p>
+                                                                    </div>
+                                                                </div>
+                                                                <button
+                                                                    onClick={() => removeEttFile(index)}
+                                                                    className="size-8 rounded-lg flex items-center justify-center text-[var(--color-text-muted)] hover:text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10 transition-all"
+                                                                >
+                                                                    <span className="material-symbols-outlined text-sm">delete</span>
+                                                                </button>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
                                             </div>
 
                                             <div className="grid grid-cols-2 gap-4">

@@ -1,6 +1,7 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 mod backup;
 mod version;
+mod file_storage;
 
 #[tauri::command]
 fn greet(name: &str) -> String {
@@ -320,6 +321,16 @@ pub fn run() {
             ",
             kind: tauri_plugin_sql::MigrationKind::Up,
         },
+        tauri_plugin_sql::Migration {
+            version: 8,
+            description: "add_file_storage_columns",
+            sql: "
+                ALTER TABLE ecg_ett_exams 
+                ADD COLUMN ecg_files TEXT COMMENT 'JSON array of ECG file paths',
+                ADD COLUMN ett_files TEXT COMMENT 'JSON array of ETT file paths';
+            ",
+            kind: tauri_plugin_sql::MigrationKind::Up,
+        },
     ];
 
     tauri::Builder::default()
@@ -328,11 +339,11 @@ pub fn run() {
             tauri_plugin_sql::Builder::default()
                 .add_migrations(
                     if cfg!(debug_assertions) {
-                       // "mysql://root:51405492fS%40@localhost/cardio_ebogo"
-                        "mysql://u111881942_cardio:51405492fSteve%40@82.197.82.156/u111881942_cardio"
+                       "mysql://root:51405492fS%40@localhost/cardio_ebogo"
+                        //"mysql://u111881942_cardio:51405492fSteve%40@82.197.82.156/u111881942_cardio"
                     } else {
-                        //"mysql://root:51405492fS%40@localhost/cardio_ebogo"
-                        "mysql://u111881942_cardio:51405492fSteve%40@82.197.82.156/u111881942_cardio"
+                        "mysql://root:51405492fS%40@localhost/cardio_ebogo"
+                        //"mysql://u111881942_cardio:51405492fSteve%40@82.197.82.156/u111881942_cardio"
                     },
                     migrations,
                 )
@@ -346,7 +357,10 @@ pub fn run() {
             backup::list_backup_files,
             backup::delete_backup_file,
             version::get_app_version,
-            version::get_app_platform
+            version::get_app_platform,
+            file_storage::save_medical_file,
+            file_storage::read_medical_file,
+            file_storage::delete_medical_file
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

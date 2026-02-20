@@ -141,12 +141,16 @@ export const PrescriptionPage: React.FC = () => {
             alert('Please select a patient and add medications first.');
             return;
         }
+        if (!selectedConsultationId) {
+            alert('Please link the prescription to a consultation.');
+            return;
+        }
 
         setIsSaving(true);
         try {
             await DatabaseService.savePrescription(
                 medications,
-                selectedConsultationId ? parseInt(selectedConsultationId) : undefined
+                parseInt(selectedConsultationId)
             );
             alert('Prescription saved successfully!');
             // Optional: reset page or navigate back
@@ -477,14 +481,14 @@ export const PrescriptionPage: React.FC = () => {
                                 <div className="flex flex-col items-center gap-4">
                                     <div className="relative">
                                         <div className="px-10 py-4 bg-primary/5 dark:bg-white/5 rounded-2xl italic text-primary font-serif text-3xl tracking-tighter shadow-inner ring-1 ring-primary/20 print:bg-white print:ring-0 print:border-b-2 print:border-gray-100">
-                                            Dr. Ebogo T.
+                                            Dr. Cyrille Mbida T.
                                         </div>
                                         <div className="absolute -top-2 -right-2 rotate-12 scale-110 opacity-20 print:hidden">
                                             <span className="material-symbols-outlined text-4xl text-primary">verified_user</span>
                                         </div>
                                     </div>
                                     <div className="text-center space-y-0.5">
-                                        <p className="text-[11px] font-black text-[#0d1b19] dark:text-white uppercase tracking-tighter print:text-[#0d1b19]">Dr. Colonel Titus Ebogo</p>
+                                        <p className="text-[11px] font-black text-[#0d1b19] dark:text-white uppercase tracking-tighter print:text-[#0d1b19]">Dr. Cyrille Mbida</p>
                                         <p className="text-[8px] font-black text-[#4c9a8d] uppercase tracking-[0.3em] opacity-50">Chief Cardiologist</p>
                                     </div>
                                 </div>

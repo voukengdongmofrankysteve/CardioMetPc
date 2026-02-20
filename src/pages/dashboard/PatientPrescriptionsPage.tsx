@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 
 import { Card } from '../../components/ui/Card';
 import { DatabaseService } from '../../services/database';
+import { EditPrescriptionPage } from '../prescription/EditPrescriptionPage';
+import moment from 'moment';
 
 interface Prescription {
     id: number;
@@ -11,6 +13,7 @@ interface Prescription {
     duration: string;
     consultation_date: string;
     consultation_id: number;
+    instructions: string;
 }
 
 interface PatientPrescriptionsPageProps {
@@ -19,6 +22,7 @@ interface PatientPrescriptionsPageProps {
     patientName: string;
     onBack: () => void;
     onEditPrescription: (prescription: any) => void;
+    onViewPrescription: (prescription: any) => void;
 }
 
 export const PatientPrescriptionsPage: React.FC<PatientPrescriptionsPageProps> = ({
@@ -26,10 +30,12 @@ export const PatientPrescriptionsPage: React.FC<PatientPrescriptionsPageProps> =
     patientDbId,
     patientName,
     onBack,
-    onEditPrescription
+    onViewPrescription
 }) => {
     const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [isEditing, setIsEditing] = useState(false);
+    const [prescriptionToEdit, setPrescriptionToEdit] = useState<Prescription | null>(null);
 
     const loadPrescriptions = async () => {
         setIsLoading(true);
@@ -39,7 +45,6 @@ export const PatientPrescriptionsPage: React.FC<PatientPrescriptionsPageProps> =
         } catch (error) {
             console.error('Failed to load prescriptions:', error);
         } finally {
-            setIsLoading(true); // Wait, should be false
             setIsLoading(false);
         }
     };
@@ -47,6 +52,32 @@ export const PatientPrescriptionsPage: React.FC<PatientPrescriptionsPageProps> =
     useEffect(() => {
         loadPrescriptions();
     }, [patientDbId]);
+
+    const handleEditPrescription = (prescription: Prescription) => {
+        setPrescriptionToEdit(prescription);
+        setIsEditing(true);
+    };
+
+    const handleSaveEdit = (updatedPrescription: Prescription) => {
+        setPrescriptions(prev => prev.map(p => p.id === updatedPrescription.id ? updatedPrescription : p));
+        setIsEditing(false);
+        setPrescriptionToEdit(null);
+    };
+
+    const handleCancelEdit = () => {
+        setIsEditing(false);
+        setPrescriptionToEdit(null);
+    };
+
+    if (isEditing && prescriptionToEdit) {
+        return (
+            <EditPrescriptionPage
+                prescription={prescriptionToEdit}
+                onBack={handleCancelEdit}
+                onSave={handleSaveEdit}
+            />
+        );
+    }
 
     return (
         <div className="flex-1 overflow-y-auto p-8 bg-[#f6f8f8] dark:bg-[#10221f] text-left">
@@ -78,15 +109,26 @@ export const PatientPrescriptionsPage: React.FC<PatientPrescriptionsPageProps> =
                                 <div>
                                     <p className="text-[10px] font-black text-[#4c9a8d] uppercase tracking-widest">Date de Consultation</p>
                                     <p className="text-sm font-black text-[#0d1b19] dark:text-white">
-                                        {new Date(px.consultation_date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}
+                                        {px.consultation_date ? moment(px.consultation_date, 'YYYY-MM-DD HH:mm:ss.S Z').format('DD/MM/YYYY [à] HH:mm') : 'N/A'}
+                                    
                                     </p>
                                 </div>
-                                <button
-                                    onClick={() => onEditPrescription(px)}
-                                    className="p-2 rounded-lg bg-[#42f0d3]/10 text-primary opacity-0 group-hover:opacity-100 transition-all hover:scale-110"
-                                >
-                                    <span className="material-symbols-outlined text-lg">edit</span>
-                                </button>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => onViewPrescription(px)}
+                                        className="p-2 rounded-lg bg-[#42f0d3]/10 text-primary opacity-0 group-hover:opacity-100 transition-all hover:scale-110"
+                                        title="Voir l'ordonnance"
+                                    >
+                                        <span className="material-symbols-outlined text-lg">visibility</span>
+                                    </button>
+                                    <button
+                                        onClick={() => handleEditPrescription(px)}
+                                        className="p-2 rounded-lg bg-[#42f0d3]/10 text-primary opacity-0 group-hover:opacity-100 transition-all hover:scale-110"
+                                        title="Modifier l'ordonnance"
+                                    >
+                                        <span className="material-symbols-outlined text-lg">edit</span>
+                                    </button>
+                                </div>
                             </div>
 
                             <div className="space-y-3 pt-4 border-t border-[#e7f3f1] dark:border-[#1e3a36]">

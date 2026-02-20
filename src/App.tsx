@@ -248,6 +248,9 @@ const App: React.FC = () => {
                         // For now just console log, or we could navigate to Prescription editor
                         console.log('Edit PX', px);
                     }}
+                    onViewPrescription={(px) => {
+                        console.log('View PX', px);
+                    }}
                 />;
             default:
                 return <DashboardPage onNavigate={(page: string) => {

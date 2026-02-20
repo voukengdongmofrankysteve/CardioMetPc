@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '../../components/ui/Button';
 import { DatabaseService } from '../../services/database';
+import { generatePatientDetailsPDF } from '../../services/patientDetailsPDF';
 
 interface PatientDetailsPageProps {
     patientId: string; // Numeric ID from DB
@@ -26,6 +27,53 @@ export const PatientDetailsPage: React.FC<PatientDetailsPageProps> = ({ patientI
     const [prescriptionsGrouped, setPrescriptionsGrouped] = useState<PrescriptionGroup[]>([]);
     const [latestExam, setLatestExam] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+    const handleExportPDF = () => {
+        if (patient) {
+            generatePatientDetailsPDF(patient);
+        }
+    };
+
+    const handleDeletePatient = async () => {
+        if (patient && patient.id) {
+            try {
+                console.log(`Deleting patient with ID: ${patient.id}`);
+                await DatabaseService.deletePatient(patient.id);
+                onBack(); // Go back to the previous page after deletion
+            } catch (error) {
+                console.error('Error deleting patient:', error);
+                // Optionally show an error message to the user
+            } finally {
+                setShowDeleteConfirm(false);
+            }
+        }
+    };
+
+    // Confirmation Dialog for Delete Patient
+    {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white dark:bg-[#152a26] p-8 rounded-xl shadow-lg border border-[var(--color-border)] dark:border-[#1e3a36] text-center">
+                <h3 className="text-xl font-bold text-red-600 mb-4">Confirmer la suppression</h3>
+                <p className="text-gray-700 dark:text-gray-300 mb-6">Êtes-vous sûr de vouloir supprimer ce patient ? Cette action est irréversible.</p>
+                <div className="flex justify-center gap-4">
+                    <Button
+                        variant="outline"
+                        onClick={() => setShowDeleteConfirm(false)}
+                        className="px-6 py-2 text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    >
+                        Annuler
+                    </Button>
+                    <Button
+                        onClick={handleDeletePatient}
+                        className="px-6 py-2 bg-red-600 text-white hover:bg-red-700"
+                    >
+                        Supprimer
+                    </Button>
+                </div>
+            </div>
+        </div>
+    )}
 
     // Quick Add Exam State
     const [isExamModalOpen, setIsExamModalOpen] = useState(false);
@@ -457,9 +505,16 @@ export const PatientDetailsPage: React.FC<PatientDetailsPageProps> = ({ patientI
                         <div className="flex flex-wrap items-center justify-between gap-4">
                             <h2 className="text-3xl font-black text-[var(--color-text-main)] dark:text-white tracking-tight">Hub du Dossier Patient</h2>
                             <div className="flex gap-3">
-                                <button className="px-5 py-2.5 bg-[var(--color-bg-surface)] dark:bg-[var(--color-dark-bg-surface)] text-[var(--color-text-muted)] border border-[var(--color-border)] dark:border-[var(--color-dark-border)] rounded-xl font-black text-[10px] uppercase tracking-widest shadow-sm flex items-center gap-2 hover:bg-[var(--color-bg-main)] dark:hover:bg-white/5 transition-colors">
-                                    <span className="material-symbols-outlined text-lg">picture_as_pdf</span> Exporter PDF
-                                </button>
+                                <button
+                                     onClick={handleExportPDF}
+                                      className="px-5 py-2.5 bg-[var(--color-bg-surface)] dark:bg-[var(--color-dark-bg-surface)] text-[var(--color-text-muted)] border border-[var(--color-border)] dark:border-[var(--color-dark-border)] rounded-xl font-black text-[10px] uppercase tracking-widest shadow-sm flex items-center gap-2 hover:bg-[var(--color-bg-main)] dark:hover:bg-white/5 transition-colors">
+                                      <span className="material-symbols-outlined text-lg">picture_as_pdf</span> Exporter PDF
+                                  </button>
+                                  <button
+                                      onClick={() => setShowDeleteConfirm(true)}
+                                      className="px-5 py-2.5 bg-red-500/10 text-red-500 border border-red-500/20 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-sm flex items-center gap-2 hover:bg-red-500/20 transition-colors">
+                                      <span className="material-symbols-outlined text-lg">delete</span> Supprimer Patient
+                                  </button>
                                 <button
                                     onClick={onStartConsultation}
                                     className="px-5 py-2.5 bg-[var(--color-primary)] text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-md flex items-center gap-2 hover:brightness-105 transition-all shadow-primary/20"
