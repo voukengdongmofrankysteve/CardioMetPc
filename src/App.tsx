@@ -193,6 +193,10 @@ const App: React.FC = () => {
                         setSelectedExamId(id);
                         setCurrentPage('exam-details');
                     }}
+                    onEditPatient={(id) => {
+                        setSelectedPatientId(id);
+                        setCurrentPage('new-patient');
+                    }}
                 />;
             case 'consultations':
                 return <ConsultationListPage

@@ -2,24 +2,21 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '../../components/ui/Button';
 import { DatabaseService } from '../../services/database';
 import { generatePatientDetailsPDF } from '../../services/patientDetailsPDF';
+import { generatePrescriptionPDF, PrescriptionGroup } from '../../services/prescriptionPDF';
 
 interface PatientDetailsPageProps {
     patientId: string; // Numeric ID from DB
     onBack: () => void;
     onStartConsultation: () => void;
     onViewExam: (id: string) => void;
+    onEditPatient: (id: string) => void;
 }
 
 type Tab = 'overview' | 'consultations' | 'exams' | 'prescriptions';
 
-interface PrescriptionGroup {
-    id: string | number;
-    date: string;
-    meds: string[];
-    status: string;
-}
 
-export const PatientDetailsPage: React.FC<PatientDetailsPageProps> = ({ patientId, onBack, onStartConsultation, onViewExam }) => {
+
+export const PatientDetailsPage: React.FC<PatientDetailsPageProps> = ({ patientId, onBack, onStartConsultation, onViewExam, onEditPatient }) => {
     const [activeTab, setActiveTab] = useState<Tab>('overview');
     const [patient, setPatient] = useState<any>(null);
     const [consultations, setConsultations] = useState<any[]>([]);
@@ -32,6 +29,12 @@ export const PatientDetailsPage: React.FC<PatientDetailsPageProps> = ({ patientI
     const handleExportPDF = () => {
         if (patient) {
             generatePatientDetailsPDF(patient);
+        }
+    };
+
+    const handlePrintPrescription = (prescription: PrescriptionGroup) => {
+        if (patient) {
+            generatePrescriptionPDF(prescription, patient.full_name);
         }
     };
 
@@ -364,7 +367,7 @@ export const PatientDetailsPage: React.FC<PatientDetailsPageProps> = ({ patientI
                         </div>
                     </div>
                     <div className="flex gap-2">
-                        <Button variant="outline" icon="print" className="h-10 px-4 text-xs font-bold uppercase tracking-widest">Imprimer</Button>
+                        <Button variant="outline" icon="print" className="h-10 px-4 text-xs font-bold uppercase tracking-widest" onClick={() => handlePrintPrescription(p)}>Imprimer</Button>
                         <Button variant="outline" icon="edit" className="h-10 px-4 text-xs font-bold uppercase tracking-widest">Renouveler</Button>
                     </div>
                 </div>
@@ -485,7 +488,7 @@ export const PatientDetailsPage: React.FC<PatientDetailsPageProps> = ({ patientI
                                 </div>
                             </div>
 
-                            <button className="w-full mt-6 py-3 px-4 bg-[var(--color-bg-main)] dark:bg-white/5 text-[var(--color-text-muted)] hover:text-[var(--color-primary)] rounded-xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-2 border border-[var(--color-border)] dark:border-[var(--color-dark-border)] hover:border-[var(--color-primary)]/50 transition-all">
+                            <button onClick={() => onEditPatient(patientId)} className="w-full mt-6 py-3 px-4 bg-[var(--color-bg-main)] dark:bg-white/5 text-[var(--color-text-muted)] hover:text-[var(--color-primary)] rounded-xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-2 border border-[var(--color-border)] dark:border-[var(--color-dark-border)] hover:border-[var(--color-primary)]/50 transition-all">
                                 <span className="material-symbols-outlined text-lg">edit</span> Modifier Dossier
                             </button>
                         </div>

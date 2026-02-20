@@ -1351,15 +1351,13 @@ export const ConsultationPage: React.FC<ConsultationPageProps> = ({
                                             <button
                                                 onClick={() => {
                                                     if (patientInfo) {
-                                                        generatePrescriptionPDF(
-                                                            {
-                                                                name: patientInfo.full_name,
-                                                                age: patientInfo.age,
-                                                                gender: patientInfo.gender,
-                                                                weight: examData.weight || (latestExamData?.weight ? String(latestExamData.weight) : undefined)
-                                                            },
-                                                            prescriptions
-                                                        );
+                                                        const prescriptionGroup = {
+                                                            id: patientInfo.db_id,
+                                                            date: new Date().toLocaleDateString('fr-FR'),
+                                                            meds: prescriptions.map(p => `${p.drug} - ${p.dosage} - ${p.frequency} - ${p.duration}`),
+                                                            status: 'Completed'
+                                                        };
+                                                        generatePrescriptionPDF(prescriptionGroup, patientInfo.full_name);
                                                     }
                                                 }}
                                                 disabled={prescriptions.length === 0}
