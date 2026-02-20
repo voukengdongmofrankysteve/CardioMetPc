@@ -1,10 +1,10 @@
 import Database from '@tauri-apps/plugin-sql';
 
 // Remote Connection (Legacy)
-//const DB_CONNECTION = 'mysql://u111881942_cardio:51405492fSteve%40@82.197.82.156/u111881942_cardio';
+const DB_CONNECTION = 'mysql://u111881942_cardio:51405492fSteve%40@82.197.82.156/u111881942_cardio';
 
 // Local Connection
-const DB_CONNECTION = 'mysql://root:51405492fS%40@localhost/cardio_ebogo';
+//const DB_CONNECTION = 'mysql://root:51405492fS%40@localhost/cardio_ebogo';
 
 export class DatabaseService {
     private static instance: Database | null = null;

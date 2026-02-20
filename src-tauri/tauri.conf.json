@@ -73,7 +73,7 @@
     "updater": {
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDczMEFCQkM3N0FBMUI4MTYKUldRV3VLRjZ4N3NLYzJuT2MrZU1sQmJ3YVQ4bHdIL05FZ2QyejVjQXRrMk9BTGxKaXRsZFFWSG8K",
       "endpoints": [
-        "https://github.com/voukengdongmofrankysteve/CardioMetPc/releases/latest/download/latest.json"
+        "https://github.com/voukengdongmofrankysteve/CardioMetPc/releases/download/app-v0.1.1/latest.json"
       ]
     }
   }
