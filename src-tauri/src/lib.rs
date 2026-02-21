@@ -340,10 +340,12 @@ pub fn run() {
                 .add_migrations(
                     if cfg!(debug_assertions) {
                        //"mysql://root:51405492fS%40@localhost/cardio_ebogo"
-                        "mysql://u111881942_cardio:51405492fSteve%40@82.197.82.156/u111881942_cardio"
+                      //  "mysql://u111881942_cardio:51405492fSteve%40@82.197.82.156/u111881942_cardio"
+                        "mysql://root:51405492fS%40@38.242.157.206/cardio"
                     } else {
                         //"mysql://root:51405492fS%40@localhost/cardio_ebogo"
-                        "mysql://u111881942_cardio:51405492fSteve%40@82.197.82.156/u111881942_cardio"
+                        //"mysql://u111881942_cardio:51405492fSteve%40@82.197.82.156/u111881942_cardio"
+                        "mysql://root:51405492fS%40@38.242.157.206/cardio"
                     },
                     migrations,
                 )
