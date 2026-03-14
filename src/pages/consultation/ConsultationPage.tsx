@@ -62,6 +62,7 @@ export const ConsultationPage: React.FC = () => {
 
     useEffect(() => {
         if (patientId) {
+            console.log(isLoadingTemplates);
             const dbId = parseInt(patientId);
             patientService.getPatientById(dbId).then(data => {
                 setPatientInfo(data);
@@ -100,6 +101,10 @@ export const ConsultationPage: React.FC = () => {
 
     // Automatic BMI Calculation
     useEffect(() => {
+        console.log(errors)
+        console.log(isSearching)
+        console.log(isLoadingTemplates)
+        console.log(patientInfo)
         const weight = parseFloat(examData.weight);
         const height = parseFloat(examData.height) / 100; // cm to m
         if (weight > 0 && height > 0) {

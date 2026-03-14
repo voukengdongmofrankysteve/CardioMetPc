@@ -18,13 +18,10 @@ export const PatientDetailsPage: React.FC = () => {
     const [prescriptionsGrouped, setPrescriptionsGrouped] = useState<PrescriptionGroup[]>([]);
     const [latestExam, setLatestExam] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [clinicSettings, setClinicSettings] = useState<any>(null);
     const [currentUser, setCurrentUser] = useState<any>(null);
 
-    // Styling constants
-    const BRAND_GREEN = "#10b981"; // Emerald 500
-    const DARK_GREEN = "#065f46";  // Emerald 800
+ 
 
     const loadData = async () => {
         if (!id) return;

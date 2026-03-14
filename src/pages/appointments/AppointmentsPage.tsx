@@ -45,6 +45,8 @@ export const AppointmentsPage: React.FC = () => {
     const [isScheduling, setIsScheduling] = useState(false);
 
     useEffect(() => {
+        console.log(setStatusFilter);
+        console.log(setTypeFilter);
         loadInitialData();
     }, [selectedDate]);
 
@@ -99,6 +101,7 @@ export const AppointmentsPage: React.FC = () => {
     const filteredAppointments = filteredByStatusAndType(appointments);
 
     const handleSearch = async (query: string) => {
+        console.log(filteredAgenda)
         setSearchQuery(query);
         if (query.length > 1) {
             try {

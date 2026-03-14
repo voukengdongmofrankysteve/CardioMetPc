@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '../../components/ui/Button';
-import { Modal } from '../../components/ui/Modal';
 import { prescriptionService, patientService, consultationService } from '../../services/api';
 
 interface Medication {
@@ -32,9 +31,7 @@ export const PrescriptionPage: React.FC = () => {
     const [isLoadingConsultations, setIsLoadingConsultations] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
 
-    // Modal state
-    const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
-    const [newTemplateLabel, setNewTemplateLabel] = useState('');
+  
 
     // Form state
     const [searchQuery, setSearchQuery] = useState('');
@@ -43,8 +40,7 @@ export const PrescriptionPage: React.FC = () => {
     const [duration, setDuration] = useState('');
     const [instructions, setInstructions] = useState('');
 
-    const selectedConsultation = consultations.find(c => c.id === parseInt(selectedConsultationId));
-
+  
     useEffect(() => {
         const loadInitialData = async () => {
             try {
