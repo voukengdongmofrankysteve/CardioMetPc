@@ -55,8 +55,12 @@ export const ArchivePage: React.FC<ArchivePageProps> = () => {
     };
 
     const filteredFiles = files.filter(f => {
-        const matchesSearch = f.patient_name.toLowerCase().includes(search.toLowerCase()) ||
-            f.patient_code.toLowerCase().includes(search.toLowerCase());
+        const patientName = f.patient_name || '';
+        const patientCode = f.patient_code || '';
+        const searchLower = search.toLowerCase();
+        
+        const matchesSearch = patientName.toLowerCase().includes(searchLower) ||
+            patientCode.toLowerCase().includes(searchLower);
         const matchesType = filterType === 'ALL' || f.type === filterType;
         return matchesSearch && matchesType;
     });

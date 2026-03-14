@@ -88,7 +88,7 @@ function infoRow(
 }
 
 // ─── Header ───────────────────────────────────────────────────────────────────
-function drawHeader(doc: jsPDF, doctorName: string) {
+function drawHeader(doc: jsPDF, doctorName: string, clinicSettings: any) {
     // Full-width background strip
     doc.setFillColor(...COLORS.primary);
     doc.rect(0, 0, PAGE.w, 38, 'F');
@@ -97,13 +97,14 @@ function drawHeader(doc: jsPDF, doctorName: string) {
     doc.setFontSize(20);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(...COLORS.white);
-    doc.text('CardioMed Foundation', PAGE.margin, 16);
+    doc.text(clinicSettings?.clinicName || 'CardioMed Foundation', PAGE.margin, 16);
 
     // Subtitle
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(...COLORS.primaryLight);
-    doc.text('Centre Spécialisé de Cardiologie  •  Yaoundé, Cameroun  •  (+237) 699 99 99 99', PAGE.margin, 23);
+    const subtitle = `${clinicSettings?.clinicAddress || 'Yaoundé, Cameroun'}  •  ${clinicSettings?.clinicPhone || '(+237) 699 99 99 99'}`;
+    doc.text(subtitle, PAGE.margin, 23);
 
     // Doctor + date — right aligned
     const date = new Date().toLocaleDateString('fr-FR');
@@ -264,7 +265,7 @@ function drawEmergencyContacts(
 }
 
 // ─── Footer ───────────────────────────────────────────────────────────────────
-function drawFooter(doc: jsPDF, pageNum: number, pageCount: number) {
+function drawFooter(doc: jsPDF, pageNum: number, pageCount: number, clinicSettings: any) {
     const y = PAGE.h - 12;
     doc.setDrawColor(...COLORS.primaryLight);
     doc.setLineWidth(0.5);
@@ -273,19 +274,20 @@ function drawFooter(doc: jsPDF, pageNum: number, pageCount: number) {
     doc.setFontSize(7.5);
     doc.setFont('helvetica', 'italic');
     doc.setTextColor(...COLORS.muted);
-    doc.text('CardioMed Foundation — Votre cœur, notre priorité.', PAGE.margin, y + 2);
+    doc.text(`${clinicSettings?.clinicName || 'CardioMed Foundation'} — Votre cœur, notre priorité.`, PAGE.margin, y + 2);
     doc.text(`Page ${pageNum} / ${pageCount}`, PAGE.w - PAGE.margin, y + 2, { align: 'right' });
 }
 
 // ─── Main Export ──────────────────────────────────────────────────────────────
 export const generatePatientDetailsPDF = (
     patient: PatientDetails,
-    doctorName: string = 'Dr. Cyrille Mbida'
+    doctorName: string = 'Dr. Cyrille Mbida',
+    clinicSettings?: any
 ) => {
     const doc = new jsPDF({ unit: 'mm', format: 'a4' });
 
     // ── Page 1 ──────────────────────────────────────────────────────────────
-    drawHeader(doc, doctorName);
+    drawHeader(doc, doctorName, clinicSettings);
     let y = drawPatientBanner(doc, patient);
 
     // Divider
@@ -315,7 +317,7 @@ export const generatePatientDetailsPDF = (
     const totalPages = (doc as any).internal.getNumberOfPages();
     for (let i = 1; i <= totalPages; i++) {
         doc.setPage(i);
-        drawFooter(doc, i, totalPages);
+        drawFooter(doc, i, totalPages, clinicSettings);
     }
 
     // Save

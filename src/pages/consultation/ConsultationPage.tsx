@@ -37,13 +37,15 @@ export const ConsultationPage: React.FC = () => {
     const [ecgData, setEcgData] = useState({ 
         rhythm: 'Sinusal', axis: 'Normal', prInterval: '', qrsDuration: '', qtc: '', 
         stSegment: 'Isoelectric', tWave: 'Normal', interpretation: '', findings: '',
-        filePath: '' as string | null
+        filePath: '' as string | null,
+        fileObject: null as File | null
     });
     const [ettData, setEttData] = useState({ 
         lvedd: '', lvesd: '', ef: '', 
         aorticValve: 'Normal', mitralValve: 'Normal', tricuspidValve: 'Normal',
         wallMotion: 'Normal', pericardium: 'Normal', interpretation: '',
-        filePath: '' as string | null
+        filePath: '' as string | null,
+        fileObject: null as File | null
     });
     const [scores, setScores] = useState({ 
         chadsVasc: 0, hasBled: 0, cvRisk: 'Low', nyha: 'Classe I',
@@ -108,6 +110,17 @@ export const ConsultationPage: React.FC = () => {
         }
     }, [examData.weight, examData.height]);
 
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>, type: 'ecg' | 'ett') => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        if (type === 'ecg') {
+            setEcgData({ ...ecgData, fileObject: file });
+        } else {
+            setEttData({ ...ettData, fileObject: file });
+        }
+    };
+
     const addPrescription = () => {
         if (newPrescription.drug && newPrescription.dosage) {
             setPrescriptions([...prescriptions, { ...newPrescription, id: Date.now() }]);
@@ -158,65 +171,69 @@ export const ConsultationPage: React.FC = () => {
         setIsSaving(true);
         
         try {
-            const consultationData = {
-                patient_id: parseInt(patientId),
-                reason: consultationReason || 'Checkup Cardiology',
-                clinical_exam: {
-                    bp_sys: examData.bpSys ? parseFloat(examData.bpSys) : null,
-                    bp_dia: examData.bpDia ? parseFloat(examData.bpDia) : null,
-                    heart_rate: examData.heartRate ? parseFloat(examData.heartRate) : null,
-                    weight: examData.weight ? parseFloat(examData.weight) : null,
-                    height: examData.height ? parseFloat(examData.height) : null,
-                    temp: examData.temp ? parseFloat(examData.temp) : null,
-                    spo2: examData.spo2 ? parseFloat(examData.spo2) : null,
-                    bmi: examData.bmi ? parseFloat(examData.bmi) : null,
-                    heart_sounds: examData.heartSounds,
-                    jvp: examData.jvp,
-                    auscultation: examData.auscultation,
-                    pulmonary_auscultation: examData.pulmonaryAuscultation,
-                    edema: examData.edema,
-                    notes: examData.notes
-                },
-                ecg_ett_exam: {
-                    ecg_interpretation: ecgData.interpretation,
-                    ecg_rhythm: ecgData.rhythm,
-                    ecg_axis: ecgData.axis,
-                    ecg_pr_interval: ecgData.prInterval ? parseInt(ecgData.prInterval) : null,
-                    ecg_qtc: ecgData.qtc ? parseInt(ecgData.qtc) : null,
-                    ett_fevg: ettData.ef ? parseFloat(ettData.ef) : null,
-                    ett_lvedd: ettData.lvedd ? parseFloat(ettData.lvedd) : null,
-                    ett_lvesd: ettData.lvesd ? parseFloat(ettData.lvesd) : null,
-                    ett_aortic_valve: ettData.aorticValve,
-                    ett_mitral_valve: ettData.mitralValve,
-                    ett_wall_motion: ettData.wallMotion,
-                    ett_interpretation: ettData.interpretation,
-                    ecg_files: ecgData.filePath ? [ecgData.filePath] : [],
-                    ett_files: ettData.filePath ? [ettData.filePath] : [],
-                },
-                diagnostic_result: {
-                    primary_diagnosis: diagnosticData.primaryDiagnosis,
-                    secondary_diagnoses: diagnosticData.secondaryDiagnosis ? [diagnosticData.secondaryDiagnosis] : [],
-                    nyha_class: scores.nyha,
-                    cardiac_status: diagnosticData.cardiacStatus,
-                    notes: diagnosticData.notes
-                },
-                scores: {
-                    chads_vasc: scores.chadsVasc,
-                    has_bled: scores.hasBled,
-                    cv_risk: scores.cvRisk,
-                    grace_score: scores.graceScore ? parseInt(scores.graceScore) : null,
-                    crusade_score: scores.crusadeScore ? parseInt(scores.crusadeScore) : null
-                }
-            };
-
-            const result = await consultationService.saveConsultation(consultationData);
+            // Prepare FormData for integrated file upload
+            const formData = new FormData();
+            formData.append('patient_id', patientId || '');
+            formData.append('reason', consultationReason || 'Checkup Cardiology');
             
-            // If there are prescriptions, save them separately (as per backend logic)
-            if (prescriptions.length > 0 && result.id) {
-                await prescriptionService.savePrescription(prescriptions, patientId, result.id);
+            // Add Clinical Exam
+            Object.entries(examData).forEach(([key, value]) => {
+                // Convert camelCase to snake_case for Laravel if necessary, 
+                // but let's see what the backend expects. 
+                // The backend uses bp_sys, heart_rate, etc.
+                const snakeKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+                formData.append(`clinical_exam[${snakeKey}]`, (value || '').toString());
+            });
+
+            // Add ECG/ETT Exam (Fields)
+            formData.append('ecg_ett_exam[ecg_interpretation]', ecgData.interpretation || '');
+            formData.append('ecg_ett_exam[ecg_rhythm]', ecgData.rhythm || '');
+            formData.append('ecg_ett_exam[ecg_axis]', ecgData.axis || '');
+            formData.append('ecg_ett_exam[ecg_pr_interval]', ecgData.prInterval || '');
+            formData.append('ecg_ett_exam[ecg_qtc]', ecgData.qtc || '');
+            formData.append('ecg_ett_exam[ett_fevg]', ettData.ef || '');
+            formData.append('ecg_ett_exam[ett_lvedd]', ettData.lvedd || '');
+            formData.append('ecg_ett_exam[ett_lvesd]', ettData.lvesd || '');
+            formData.append('ecg_ett_exam[ett_aortic_valve]', ettData.aorticValve || '');
+            formData.append('ecg_ett_exam[ett_mitral_valve]', ettData.mitralValve || '');
+            formData.append('ecg_ett_exam[ett_wall_motion]', ettData.wallMotion || '');
+            formData.append('ecg_ett_exam[ett_interpretation]', ettData.interpretation || '');
+
+            // Add Files (at root or nested? Laravel expects ecg_files[] at root if sent as multipart)
+            if (ecgData.fileObject) {
+                formData.append('ecg_files[]', ecgData.fileObject);
+            }
+            if (ettData.fileObject) {
+                formData.append('ett_files[]', ettData.fileObject);
             }
 
-            navigate(`/consultations/${result.id}`);
+            // Add Diagnostic Results
+            formData.append('diagnostic_result[primary_diagnosis]', diagnosticData.primaryDiagnosis || '');
+            formData.append('diagnostic_result[nyha_class]', scores.nyha || '');
+            formData.append('diagnostic_result[cardiac_status]', diagnosticData.cardiacStatus || '');
+            formData.append('diagnostic_result[notes]', diagnosticData.notes || '');
+
+            // Add Scores
+            formData.append('scores[chads_vasc]', scores.chadsVasc.toString());
+            formData.append('scores[has_bled]', scores.hasBled.toString());
+            formData.append('scores[cv_risk]', scores.cvRisk);
+            formData.append('scores[grace_score]', scores.graceScore || '');
+            formData.append('scores[crusade_score]', scores.crusadeScore || '');
+
+            const result = await consultationService.saveConsultation(formData);
+            
+            if (result && result.success !== false) {
+                const consultationId = result.id || result.data?.id;
+                // If there are prescriptions, save them separately
+                if (prescriptions.length > 0 && consultationId) {
+                    await prescriptionService.savePrescription(prescriptions, patientId, consultationId);
+                }
+
+                alert('Consultation enregistrée avec succès !');
+                navigate(`/patients/${patientId}`);
+            } else {
+                setErrors({ submit: result?.message || 'Une erreur est survenue lors de l\'enregistrement.' });
+            }
         } catch (error) {
             console.error('Failed to save consultation:', error);
             setErrors({ submit: 'Une erreur est survenue lors de l\'enregistrement.' });
@@ -521,11 +538,11 @@ export const ConsultationPage: React.FC = () => {
                                                 <p className="text-sm font-bold text-slate-900">Document ECG</p>
                                                 <p className="text-[10px] text-slate-400 uppercase font-black mt-1">PDF, JPG, PNG (Max 5MB)</p>
                                             </div>
-                                            <input type="file" id="ecg-upload" className="hidden" onChange={(e) => setEcgData({...ecgData, filePath: e.target.files?.[0]?.name || null})} />
+                                            <input type="file" id="ecg-upload" className="hidden" onChange={(e) => handleFileSelect(e, 'ecg')} />
                                             <label htmlFor="ecg-upload" className="px-6 py-2 bg-white border border-slate-200 rounded-xl text-[10px] font-black uppercase tracking-widest text-[#22c55e] hover:bg-green-50 transition-all cursor-pointer">
-                                                {ecgData.filePath ? 'Remplacer' : 'Parcourir'}
+                                                {ecgData.fileObject ? 'Remplacer' : 'Parcourir'}
                                             </label>
-                                            {ecgData.filePath && <p className="text-[10px] font-bold text-[#22c55e] mt-2">✓ {ecgData.filePath}</p>}
+                                            {ecgData.fileObject && <p className="text-[10px] font-bold text-[#22c55e] mt-2">✓ {ecgData.fileObject.name}</p>}
                                         </div>
                                     </div>
                                 </div>
@@ -599,11 +616,11 @@ export const ConsultationPage: React.FC = () => {
                                                 <p className="text-sm font-bold text-slate-900">Rapport ETT</p>
                                                 <p className="text-[10px] text-slate-400 uppercase font-black mt-1">Image ou PDF (Max 10MB)</p>
                                             </div>
-                                            <input type="file" id="ett-upload" className="hidden" onChange={(e) => setEttData({...ettData, filePath: e.target.files?.[0]?.name || null})} />
+                                            <input type="file" id="ett-upload" className="hidden" onChange={(e) => handleFileSelect(e, 'ett')} />
                                             <label htmlFor="ett-upload" className="px-6 py-2 bg-white border border-slate-200 rounded-xl text-[10px] font-black uppercase tracking-widest text-[#22c55e] hover:bg-green-50 transition-all cursor-pointer">
-                                                {ettData.filePath ? 'Remplacer' : 'Parcourir'}
+                                                {ettData.fileObject ? 'Remplacer' : 'Parcourir'}
                                             </label>
-                                            {ettData.filePath && <p className="text-[10px] font-bold text-[#22c55e] mt-2">✓ {ettData.filePath}</p>}
+                                            {ettData.fileObject && <p className="text-[10px] font-bold text-[#22c55e] mt-2">✓ {ettData.fileObject.name}</p>}
                                         </div>
                                     </div>
                                 </div>

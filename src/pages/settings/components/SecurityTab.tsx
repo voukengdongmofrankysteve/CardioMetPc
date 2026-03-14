@@ -32,21 +32,24 @@ export const SecurityTab: React.FC = () => {
         try {
             // Load password policy
             const policyResponse = await securityService.getPasswordPolicy();
-            if (policyResponse.success) {
-                const policy = policyResponse.data;
-                setPasswordSettings({
-                    minLength: policy.min_length,
-                    requireUppercase: Boolean(policy.require_uppercase),
-                    requireNumbers: Boolean(policy.require_numbers),
-                    requireSpecialChars: Boolean(policy.require_special_chars),
-                    expiryDays: policy.expiry_days
-                });
+            if (policyResponse && policyResponse.success !== false) {
+                const policy = Array.isArray(policyResponse) ? policyResponse[0] : (policyResponse.data || policyResponse);
+                if (policy) {
+                    setPasswordSettings({
+                        minLength: policy.min_length || 8,
+                        requireUppercase: Boolean(policy.require_uppercase),
+                        requireNumbers: Boolean(policy.require_numbers),
+                        requireSpecialChars: Boolean(policy.require_special_chars),
+                        expiryDays: policy.expiry_days || 90
+                    });
+                }
             }
 
             // Load audit logs
             const logsResponse = await securityService.getAuditLogs();
-            if (logsResponse.success) {
-                setAuditLogs(logsResponse.data.map((log: any) => ({
+            if (logsResponse && logsResponse.success !== false) {
+                const logs = Array.isArray(logsResponse) ? logsResponse : (logsResponse.data || []);
+                setAuditLogs(logs.map((log: any) => ({
                     id: log.id,
                     timestamp: log.timestamp || log.created_at,
                     user: log.user_name || log.user?.full_name || 'System',
@@ -71,10 +74,10 @@ export const SecurityTab: React.FC = () => {
                 require_special_chars: passwordSettings.requireSpecialChars,
                 expiry_days: passwordSettings.expiryDays
             });
-            if (response.success) {
+            if (response && response.success !== false) {
                 alert('Password policy saved successfully!');
             } else {
-                alert(response.message || 'Failed to save password policy');
+                alert(response?.message || 'Failed to save password policy');
             }
         } catch (error) {
             console.error('Failed to save password policy:', error);
@@ -206,9 +209,9 @@ export const SecurityTab: React.FC = () => {
                                     </div>
                                     <div className="flex items-center gap-2 mt-4">
                                         <div className="size-6 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-400">
-                                            {log.user.charAt(0)}
+                                            {(log.user || 'U').charAt(0)}
                                         </div>
-                                        <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Action by {log.user}</p>
+                                        <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Action by {log.user || 'System'}</p>
                                     </div>
                                 </div>
                             </div>

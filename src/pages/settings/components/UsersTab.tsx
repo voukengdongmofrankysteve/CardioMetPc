@@ -29,9 +29,10 @@ export const UsersTab: React.FC = () => {
     const loadUsers = async () => {
         setIsLoading(true);
         try {
-            const response = await userService.getUsers();
-            if (response.success) {
-                setUsers(response.data);
+            const data = await userService.getUsers();
+            if (data && data.success !== false) {
+                // If it's the raw array from interceptor
+                setUsers(Array.isArray(data) ? data : (data.data || []));
             }
         } catch (error) {
             console.error('Failed to load users:', error);
@@ -40,11 +41,16 @@ export const UsersTab: React.FC = () => {
         }
     };
 
-    const filteredUsers = users.filter(user =>
-        user.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        user.role.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const filteredUsers = users.filter(user => {
+        const fullName = user.full_name || '';
+        const username = user.username || '';
+        const role = user.role || '';
+        const search = searchQuery.toLowerCase();
+        
+        return fullName.toLowerCase().includes(search) ||
+               username.toLowerCase().includes(search) ||
+               role.toLowerCase().includes(search);
+    });
 
     if (isLoading) {
         return (
@@ -95,9 +101,9 @@ export const UsersTab: React.FC = () => {
                                 <td className="px-8 py-5">
                                     <div className="flex items-center gap-4">
                                         <div className="size-10 rounded-xl bg-[#22c55e]/10 flex items-center justify-center text-[#22c55e] font-bold text-sm">
-                                            {user.full_name.charAt(0)}
+                                            {(user.full_name || 'U').charAt(0)}
                                         </div>
-                                        <span className="font-bold text-sm text-slate-900">{user.full_name}</span>
+                                        <span className="font-bold text-sm text-slate-900">{user.full_name || 'Unknown User'}</span>
                                     </div>
                                 </td>
                                 <td className="px-6 py-5 text-sm text-slate-500 font-medium italic">@{user.username}</td>

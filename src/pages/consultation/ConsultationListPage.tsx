@@ -32,8 +32,9 @@ export const ConsultationListPage: React.FC = () => {
     const filteredConsultations = consultations.filter(c => {
         const patientName = c.patient?.full_name || '';
         const patientCode = c.patient?.patient_id || '';
-        return patientName.toLowerCase().includes(search.toLowerCase()) ||
-               patientCode.toLowerCase().includes(search.toLowerCase());
+        const searchLower = search.toLowerCase();
+        return patientName.toLowerCase().includes(searchLower) ||
+               patientCode.toLowerCase().includes(searchLower);
     });
 
     const inputClasses = "w-full h-11 pl-12 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-4 focus:ring-green-500/10 focus:border-[#22c55e] transition-all";

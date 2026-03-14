@@ -43,7 +43,7 @@ export const EditPrescriptionPage: React.FC<EditPrescriptionPageProps> = ({
             };
             
             const response = await prescriptionService.updatePrescription(updatedPrescription);
-            if (response.success) {
+            if (response && response.success !== false) {
                 onSave(updatedPrescription);
                 onBack();
             }

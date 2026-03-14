@@ -52,8 +52,10 @@ export const RolesPermissionsTab: React.FC = () => {
     const loadPermissions = async () => {
         setIsLoading(true);
         try {
-            const response = await securityService.getRolesPermissions();
-            const dbPermissions = response.success ? response.data : [];
+            const result = await securityService.getRolesPermissions();
+            const dbPermissions = (result && result.success !== false) 
+                ? (Array.isArray(result) ? result : (result.data || []))
+                : [];
 
             // Update permissions based on database data
             const updatedGroups = initialPermissionsGroups.map(group => ({

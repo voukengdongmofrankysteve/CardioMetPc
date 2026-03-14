@@ -80,9 +80,9 @@ export const DeleteUserModal: React.FC<DeleteUserModalProps> = ({ isOpen, onClos
                             
                             <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 border-dashed">
                                 <div className="size-16 rounded-full bg-white shadow-sm border border-slate-100 flex items-center justify-center text-slate-900 font-black text-xl mx-auto mb-3">
-                                    {user.full_name.charAt(0)}
+                                    {(user.full_name || 'U').charAt(0)}
                                 </div>
-                                <h3 className="font-black text-slate-900 uppercase tracking-tight">{user.full_name}</h3>
+                                <h3 className="font-black text-slate-900 uppercase tracking-tight">{user.full_name || 'Unknown'}</h3>
                                 <p className="text-xs text-slate-400 font-medium">@{user.username}</p>
                             </div>
 

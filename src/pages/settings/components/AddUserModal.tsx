@@ -50,7 +50,7 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onU
                 email: formData.email || undefined
             });
 
-            if (response.success) {
+            if (response && response.success !== false) {
                 // Reset form
                 setFormData({
                     username: '',
@@ -66,14 +66,18 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onU
             } else {
                 setError(response.message || 'Failed to create user');
             }
-        } catch (error: any) {
-            console.error('Failed to create user:', error);
-            console.error('Error details:', {
-                message: error?.message,
-                code: error?.code,
-                stack: error?.stack
-            });
-            setError(`Failed to create user: ${error?.message || 'Unknown error'}. Please check the console for details.`);
+        } catch (err: any) {
+            console.error('Failed to create user:', err);
+            
+            // Handle Laravel validation errors (422)
+            const validationErrors = err.response?.data?.errors;
+            if (validationErrors) {
+                const firstErrorField = Object.keys(validationErrors)[0];
+                const firstErrorMessage = validationErrors[firstErrorField][0];
+                setError(firstErrorMessage);
+            } else {
+                setError(err.response?.data?.message || err.message || 'Failed to create user. Please try again.');
+            }
         } finally {
             setIsSubmitting(false);
         }

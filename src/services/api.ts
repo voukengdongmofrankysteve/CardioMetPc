@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:8000/api';
+const API_URL = 'https://cardiomed.vyloxi.com/api';
 
 const api = axios.create({
     baseURL: API_URL,
@@ -115,7 +115,10 @@ export const consultationService = {
     return response.data;
   },
   saveConsultation: async (data: any) => {
-    const response = await api.post('/consultations', data);
+    const isFormData = data instanceof FormData;
+    const response = await api.post('/consultations', data, {
+      headers: isFormData ? { 'Content-Type': 'multipart/form-data' } : {}
+    });
     return response.data;
   },
 };
@@ -259,6 +262,38 @@ export const securityService = {
   updateRolePermission: async (role: string, permission: string, allowed: boolean) => {
     const response = await api.post('/settings/security/permissions', { role, permission, allowed });
     return response.data;
+  }
+};
+
+export const fileService = {
+  uploadFile: async (file: File, type: 'ecg' | 'ett') => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('type', type);
+    const response = await api.post('/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
+  downloadFile: async (path: string) => {
+    try {
+      const response = await api.get(`/download/${path.replace(/\//g, '%2F')}`, {
+        responseType: 'blob'
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', path.split('/').pop() || 'download');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Download failed:', error);
+      alert('Le téléchargement a échoué.');
+    }
   }
 };
 

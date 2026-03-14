@@ -19,9 +19,9 @@ export const SecurityBackupsTab: React.FC = () => {
 
     const loadData = async () => {
         try {
-            const response = await securityService.getBackups();
-            if (response.success) {
-                const backupHistory = response.data;
+            const data = await securityService.getBackups();
+            if (data && data.success !== false) {
+                const backupHistory = Array.isArray(data) ? data : (data.data || []);
                 setBackups(backupHistory);
                 
                 // Calculate stats from history for now
@@ -51,11 +51,11 @@ export const SecurityBackupsTab: React.FC = () => {
             // Or use Tauri if client-side. The user wants API connection.
             const response = await securityService.createBackup();
             
-            if (response.success) {
+            if (response && response.success !== false) {
                 alert('Backup created successfully!');
                 await loadData();
             } else {
-                alert(response.message || 'Backup failed');
+                alert(response?.message || 'Backup failed');
             }
         } catch (error: any) {
             console.error('Backup creation failed:', error);

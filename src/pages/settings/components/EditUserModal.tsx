@@ -56,15 +56,24 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, o
                 email: formData.email || undefined
             });
 
-            if (response.success) {
+            if (response && response.success !== false) {
                 onUserUpdated();
                 onClose();
             } else {
                 setError(response.message || 'Failed to update user');
             }
-        } catch (error) {
-            console.error('Failed to update user:', error);
-            setError('Failed to update user. Please try again.');
+        } catch (err: any) {
+            console.error('Failed to update user:', err);
+            
+            // Handle Laravel validation errors (422)
+            const validationErrors = err.response?.data?.errors;
+            if (validationErrors) {
+                const firstErrorField = Object.keys(validationErrors)[0];
+                const firstErrorMessage = validationErrors[firstErrorField][0];
+                setError(firstErrorMessage);
+            } else {
+                setError(err.response?.data?.message || err.message || 'Failed to update user. Please try again.');
+            }
         } finally {
             setIsSubmitting(false);
         }

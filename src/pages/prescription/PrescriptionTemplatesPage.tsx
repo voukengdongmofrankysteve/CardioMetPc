@@ -68,14 +68,14 @@ export const PrescriptionTemplatesPage: React.FC = () => {
         try {
             if (editingTemplate) {
                 const result = await prescriptionService.updateTemplate(editingTemplate.id, label, meds);
-                if (result) {
+                if (result && result.success !== false) {
                     setIsModalOpen(false);
                     loadTemplates();
                     resetForm();
                 }
             } else {
                 const result = await prescriptionService.saveTemplate(label, meds);
-                if (result) {
+                if (result && result.success !== false) {
                     setIsModalOpen(false);
                     loadTemplates();
                     resetForm();

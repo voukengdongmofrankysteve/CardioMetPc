@@ -318,7 +318,7 @@ const PrintIdCardModal: React.FC<{ isOpen: boolean; onClose: () => void; }> = ({
                                 </div>
                             </div>
                             <div class="content">
-                                <div class="avatar">${selectedPatient.full_name.charAt(0)}</div>
+                                <div class="avatar">${(selectedPatient.full_name || 'P').charAt(0)}</div>
                                 <div class="info">
                                     <h2 class="name">${selectedPatient.full_name}</h2>
                                     <p class="detail">Né(e) le: ${new Date(selectedPatient.dob).toLocaleDateString()}</p>
@@ -372,7 +372,7 @@ const PrintIdCardModal: React.FC<{ isOpen: boolean; onClose: () => void; }> = ({
                                         onClick={() => setSelectedPatient(p)}
                                     >
                                         <div className="size-9 rounded-full bg-emerald-600 flex items-center justify-center text-white font-bold text-sm">
-                                            {p.full_name.charAt(0)}
+                                            {(p.full_name || 'P').charAt(0)}
                                         </div>
                                         <div>
                                             <p className="font-bold text-sm text-slate-800">{p.full_name}</p>
@@ -390,7 +390,7 @@ const PrintIdCardModal: React.FC<{ isOpen: boolean; onClose: () => void; }> = ({
                                 </div>
                                 <div className="flex gap-4">
                                     <div className="size-12 bg-white rounded-xl flex items-center justify-center font-bold text-xl text-emerald-600">
-                                        {selectedPatient.full_name.charAt(0)}
+                                        {(selectedPatient.full_name || 'P').charAt(0)}
                                     </div>
                                     <div>
                                         <p className="font-bold text-lg uppercase leading-none mb-1">{selectedPatient.full_name}</p>

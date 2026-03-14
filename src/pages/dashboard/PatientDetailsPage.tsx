@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '../../components/ui/Button';
-import { patientService, consultationService } from '../../services/api';
+import { patientService, consultationService, systemService, fileService } from '../../services/api';
 import { generatePatientDetailsPDF } from '../../services/patientDetailsPDF';
 import { generatePrescriptionPDF, PrescriptionGroup } from '../../services/prescriptionPDF';
 
@@ -19,6 +19,8 @@ export const PatientDetailsPage: React.FC = () => {
     const [latestExam, setLatestExam] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [clinicSettings, setClinicSettings] = useState<any>(null);
+    const [currentUser, setCurrentUser] = useState<any>(null);
 
     // Styling constants
     const BRAND_GREEN = "#10b981"; // Emerald 500
@@ -79,6 +81,17 @@ export const PatientDetailsPage: React.FC = () => {
             if (cData && cData.length > 0) {
                 setLatestExam(cData[0].clinical_exam || null);
             }
+
+            // Load Settings & User
+            const settingsData = await systemService.getSettings();
+            if (settingsData && settingsData.success !== false) {
+                setClinicSettings(settingsData.data || settingsData);
+            }
+
+            const userDataStr = localStorage.getItem('cardio_user');
+            if (userDataStr) {
+                setCurrentUser(JSON.parse(userDataStr));
+            }
         } catch (err) {
             console.error('Failed to load patient details:', err);
         } finally {
@@ -88,7 +101,11 @@ export const PatientDetailsPage: React.FC = () => {
 
     useEffect(() => { loadData(); }, [id]);
 
-    const handleExportPDF = () => patient && generatePatientDetailsPDF(patient);
+    const handleExportPDF = () => {
+        if (!patient) return;
+        const doctorName = currentUser?.full_name || 'Dr. Cyrille Mbida';
+        generatePatientDetailsPDF(patient, doctorName, clinicSettings);
+    };
     
     const handlePrintPrescription = (prescription: PrescriptionGroup) => {
         if (patient) generatePrescriptionPDF(prescription, patient.full_name);
@@ -96,20 +113,7 @@ export const PatientDetailsPage: React.FC = () => {
 
     const handleDownloadFile = (fileName: string) => {
         if (!fileName) return;
-        // In a real app, this would be a full URL to the storage
-        // Since we are mocking the file selection by name, we just alert
-        // but we show the button and the name correctly.
-        console.log(`Downloading file: ${fileName}`);
-        alert(`Téléchargement de: ${fileName}`);
-        
-        /* 
-        const link = document.createElement('a');
-        link.href = `/storage/exams/${fileName}`;
-        link.download = fileName;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        */
+        fileService.downloadFile(fileName);
     };
 
     const [isExamModalOpen, setIsExamModalOpen] = useState(false);
@@ -171,9 +175,9 @@ export const PatientDetailsPage: React.FC = () => {
                 <aside className="col-span-12 lg:col-span-3 flex flex-col gap-6">
                     <div className="bg-white rounded-3xl p-8 border border-gray-200 shadow-sm text-center">
                         <div className="size-24 rounded-2xl bg-emerald-600 mx-auto flex items-center justify-center text-white text-3xl font-black mb-4 shadow-lg shadow-emerald-200">
-                            {patient.full_name.charAt(0)}
+                            {(patient.full_name || 'P').charAt(0)}
                         </div>
-                        <h1 className="text-xl font-bold text-emerald-950 mb-1">{patient.full_name}</h1>
+                        <h1 className="text-xl font-bold text-emerald-950 mb-1">{patient.full_name || 'Patient Inconnu'}</h1>
                         <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-6">Patient Enregistré</p>
                         
                         <div className="space-y-4 text-left">

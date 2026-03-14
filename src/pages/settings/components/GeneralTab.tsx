@@ -35,9 +35,9 @@ export const GeneralTab: React.FC = () => {
     const loadSettings = async () => {
         setIsLoading(true);
         try {
-            const response = await systemService.getSettings();
-            if (response.success) {
-                const dbSettings = response.data;
+            const data = await systemService.getSettings();
+            if (data && data.success !== false) {
+                const dbSettings = data.data || data;
                 setSettings({
                     clinicName: dbSettings.clinicName || 'CardioMed ',
                     clinicAddress: dbSettings.clinicAddress || 'Yaoundé, Cameroun',
@@ -70,10 +70,10 @@ export const GeneralTab: React.FC = () => {
                 currency: settings.currency
             };
             const response = await systemService.updateSettings(settingsToSave);
-            if (response.success) {
+            if (response && response.success !== false) {
                 alert('Settings saved successfully!');
             } else {
-                alert(response.message || 'Failed to save settings');
+                alert(response?.message || 'Failed to save settings');
             }
         } catch (error) {
             console.error('Failed to save settings:', error);
