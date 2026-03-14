@@ -2,15 +2,15 @@ import React, { useState } from 'react';
 import { Card } from '../../components/ui/Card';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
-import { DatabaseService } from '../../services/database';
+import { authService } from '../../services/api';
 
 interface LoginPageProps {
     onLogin: () => void;
 }
 
 export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
-    const [username, setUsername] = useState('admin');
-    const [password, setPassword] = useState('password123');
+    const [email, setEmail] = useState('test@example.com');
+    const [password, setPassword] = useState('password');
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -21,16 +21,15 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
         setError(null);
 
         try {
-            const user = await DatabaseService.login(username, password);
-            if (user) {
-                localStorage.setItem('cardio_user', JSON.stringify(user));
-                onLogin();
-            } else {
-                setError('Utilisateur ou mot de passe incorrect.');
-            }
-        } catch (err) {
+            await authService.login(email, password);
+            onLogin();
+        } catch (err: any) {
             console.error('Login error:', err);
-            setError('Erreur de connexion à la base de données.');
+            if (err.response?.status === 422) {
+                setError('Email ou mot de passe incorrect.');
+            } else {
+                setError('Erreur de connexion au serveur.');
+            }
         } finally {
             setIsLoading(false);
         }
@@ -52,12 +51,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                     )}
 
                     <Input
-                        label="Nom d'utilisateur"
-                        placeholder="Entrez votre nom d'utilisateur"
-                        type="text"
+                        label="Email"
+                        placeholder="Entrez votre email"
+                        type="email"
                         required
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
                     />
 
                     <Input

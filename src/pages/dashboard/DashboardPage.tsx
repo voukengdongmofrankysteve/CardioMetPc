@@ -1,49 +1,53 @@
 import React, { useEffect, useState } from 'react';
-import { DatabaseService } from '../../services/database';
+import { useNavigate } from 'react-router-dom';
+import { dashboardService, patientService } from '../../services/api';
 import moment from 'moment';
 
 const StatCard: React.FC<{ label: string; value: string; icon: string; trend?: string; trendUp?: boolean; detail?: string }> = ({ label, value, icon, trend, trendUp, detail }) => (
-    <div className="bg-white dark:bg-[#152a26] p-6 rounded-xl border border-[#e7f3f1] dark:border-[#1e3a36] shadow-sm flex flex-col transition-all hover:shadow-md">
+    <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex flex-col transition-all hover:shadow-md hover:border-emerald-200">
         <div className="flex items-center justify-between mb-4">
-            <p className="text-[#4c9a8d] dark:text-[#4c9a8d] text-sm font-semibold uppercase tracking-wider">{label}</p>
-            <span className="material-symbols-outlined text-primary bg-primary/10 p-2 rounded-lg">{icon}</span>
+            <p className="text-emerald-600 text-sm font-semibold uppercase tracking-wider">{label}</p>
+            <span className="material-symbols-outlined text-emerald-600 bg-emerald-50 p-2.5 rounded-xl text-xl">{icon}</span>
         </div>
-        <div className="flex items-baseline gap-2">
-            <p className="text-[#0d1b19] dark:text-white text-3xl font-bold">{value}</p>
+        <div className="flex items-baseline gap-2 flex-wrap">
+            <p className="text-slate-800 text-3xl font-bold">{value}</p>
             {trend && (
-                <span className={`${trendUp ? 'text-[#078838]' : 'text-red-500'} text-sm font-bold flex items-center`}>
+                <span className={`${trendUp ? 'text-emerald-600' : 'text-red-500'} text-sm font-semibold flex items-center gap-0.5`}>
                     <span className="material-symbols-outlined text-sm">{trendUp ? 'trending_up' : 'trending_down'}</span> {trend}
                 </span>
             )}
-            {detail && <span className="text-[#4c9a8d] dark:text-slate-500 text-sm font-medium">{detail}</span>}
+            {detail && <span className="text-slate-500 text-sm font-medium ml-1">{detail}</span>}
         </div>
     </div>
 );
 
 const ActivityItem: React.FC<{ color: string; icon: string; title: string; time: string; location: string }> = ({ color, icon, title, time, location }) => (
-    <div className="p-5 flex items-start gap-4 hover:bg-[#f6f8f8] dark:hover:bg-white/5 transition-colors cursor-pointer group">
-        <div className={`${color} p-2 rounded-full mt-1 group-hover:scale-110 transition-transform`}>
+    <div className="p-4 flex items-start gap-4 hover:bg-emerald-50/50 transition-colors cursor-pointer group rounded-lg">
+        <div className={`${color} p-2.5 rounded-xl shrink-0 group-hover:scale-105 transition-transform`}>
             <span className="material-symbols-outlined text-xl">{icon}</span>
         </div>
-        <div className="flex-1 text-left">
-            <p className="text-sm text-[#0d1b19] dark:text-white font-medium" dangerouslySetInnerHTML={{ __html: title }} />
-            <p className="text-xs text-[#4c9a8d] mt-1">{time} • {location}</p>
+        <div className="flex-1 min-w-0 text-left">
+            <p className="text-sm text-slate-800 font-medium" dangerouslySetInnerHTML={{ __html: title }} />
+            <p className="text-xs text-slate-500 mt-1">{time} • {location}</p>
         </div>
-        <button className="text-[#4c9a8d] hover:text-primary"><span className="material-symbols-outlined">more_horiz</span></button>
+        <button type="button" className="text-slate-400 hover:text-emerald-600 p-1 rounded-lg hover:bg-emerald-50 transition-colors">
+            <span className="material-symbols-outlined text-lg">more_horiz</span>
+        </button>
     </div>
 );
 
-interface DashboardPageProps {
-    onNavigate: (page: string) => void;
-}
-
-export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
+export const DashboardPage: React.FC = () => {
+    const navigate = useNavigate();
     const [stats, setStats] = useState({
-        totalPatients: 0,
-        appointmentsToday: 0,
-        appointmentsCompletedToday: 0,
-        pendingReports: 0
+        total_patients: 0,
+        total_consultations: 0,
+        today_appointments: 0,
+        pending_prescriptions: 0,
+        appointments_today: 0,
+        appointments_completed: 0,
+        pending_reports: 0
     });
+
     const [recentActivity, setRecentActivity] = useState<any[]>([]);
     const [nextAppointments, setNextAppointments] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -51,20 +55,24 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
 
     useEffect(() => {
         const loadDashboardData = async () => {
+            setIsLoading(true);
             try {
-                const today = new Date().toISOString().split('T')[0];
+                const data = await dashboardService.getStats();
+                if (!data) return;
 
-                const [statsData, activityData, appointmentsData] = await Promise.all([
-                    DatabaseService.getDashboardStats(),
-                    DatabaseService.getRecentActivity(),
-                    DatabaseService.getAppointments(today)
-                ]);
+                const s = data.stats || {};
+                setStats({
+                    total_patients: s.total_patients ?? 0,
+                    total_consultations: s.total_consultations ?? 0,
+                    today_appointments: s.today_appointments ?? 0,
+                    pending_prescriptions: s.pending_prescriptions ?? 0,
+                    appointments_today: s.today_appointments ?? 0,
+                    appointments_completed: s.completed_appointments ?? 0,
+                    pending_reports: s.pending_reports ?? 0,
+                });
 
-                setStats(statsData);
-                setRecentActivity(activityData);
-
-                // Filter for upcoming or all appointments today
-                setNextAppointments(appointmentsData.slice(0, 5));
+                setRecentActivity(Array.isArray(data.recent_activity) ? data.recent_activity : []);
+                setNextAppointments(Array.isArray(data.upcoming_appointments) ? data.upcoming_appointments : []);
             } catch (error) {
                 console.error("Error loading dashboard data:", error);
             } finally {
@@ -77,39 +85,39 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
 
     if (isLoading) {
         return (
-            <div className="flex-1 flex flex-col items-center justify-center bg-[#f6f8f8] dark:bg-[#10221f]">
-                <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4"></div>
-                <p className="text-[#4c9a8d] font-black uppercase tracking-widest text-xs">Chargement du tableau de bord...</p>
+            <div className="flex-1 flex flex-col items-center justify-center bg-white">
+                <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+                <p className="text-emerald-700 font-semibold text-sm">Chargement du tableau de bord...</p>
             </div>
         );
     }
 
     return (
-        <div className="flex-1 overflow-y-auto p-8 bg-[#f6f8f8] dark:bg-[#10221f]">
+        <div className="flex-1 overflow-y-auto p-8 bg-white min-h-screen">
             {/* Header */}
             <div className="mb-8 text-left">
-                <h2 className="text-[#0d1b19] dark:text-white text-3xl font-black tracking-tight">Bienvenue, Dr. Cyrille Mbida</h2>
-                <p className="text-[#4c9a8d] dark:text-[#4c9a8d] mt-1 font-medium">Voici l'état actuel de votre pratique cardiologique aujourd'hui.</p>
+                <h2 className="text-slate-800 text-2xl md:text-3xl font-bold tracking-tight">Bienvenue, Dr. Cyrille Mbida</h2>
+                <p className="text-slate-600 mt-1 text-sm">Voici l'état actuel de votre pratique cardiologique aujourd'hui.</p>
             </div>
 
             {/* Stats */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 <StatCard
                     label="Total Patients"
-                    value={stats.totalPatients.toLocaleString()}
+                    value={stats.total_patients.toLocaleString()}
                     icon="group"
                     trend="+Nouveau"
                     trendUp
                 />
                 <StatCard
                     label="Rendez-vous Aujourd'hui"
-                    value={stats.appointmentsToday.toString()}
+                    value={stats.appointments_today.toString()}
                     icon="calendar_today"
-                    detail={`${stats.appointmentsCompletedToday} terminés`}
+                    detail={`${stats.appointments_completed} terminés`}
                 />
                 <StatCard
                     label="Rapports en Attente"
-                    value={stats.pendingReports.toString()}
+                    value={stats.pending_reports.toString()}
                     icon="clinical_notes"
                     trend="Consultations en cours"
                 />
@@ -118,68 +126,74 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-2 flex flex-col gap-8">
                     {/* Recent Activity */}
-                    <div className="bg-white dark:bg-[#152a26] rounded-xl border border-[#e7f3f1] dark:border-[#1e3a36] overflow-hidden shadow-sm">
-                        <div className="p-5 border-b border-[#e7f3f1] dark:border-[#1e3a36] flex items-center justify-between">
-                            <h3 className="text-[#0d1b19] dark:text-white font-bold text-lg">Activité Récente</h3>
-                            <button className="text-primary text-xs font-bold uppercase hover:underline">Voir Tout</button>
+                    <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm">
+                        <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+                            <h3 className="text-slate-800 font-bold text-lg">Activité Récente</h3>
+                            <button type="button" className="text-emerald-600 text-sm font-semibold hover:text-emerald-700">Voir tout</button>
                         </div>
-                        <div className="divide-y divide-[#e7f3f1] dark:divide-[#1e3a36]">
+                        <div className="divide-y divide-slate-50">
                             {recentActivity.length > 0 ? (
                                 recentActivity.map((activity, index) => (
                                     <ActivityItem
                                         key={index}
-                                        color={activity.type === 'Consultation' ? "bg-[#42f0d3]/10 text-[#42f0d3]" : "bg-blue-50 dark:bg-blue-900/20 text-blue-500"}
+                                        color={activity.type === 'Consultation' ? "bg-emerald-50 text-emerald-600" : "bg-sky-50 text-sky-600"}
                                         icon={activity.type === 'Consultation' ? "check_circle" : "person_add"}
                                         title={`${activity.type === 'Consultation' ? 'Consultation' : 'Nouveau Patient'} - <strong>${activity.patient_name}</strong>`}
-                                        time={activity.created_at ? moment(activity.created_at, 'YYYY-MM-DD HH:mm:ss.S Z').format('YYYY-MM-DD [à] HH:mm') : 'N/A'}
+                                        time={activity.created_at ? moment(activity.created_at).fromNow() : 'N/A'}
                                         location={activity.type === 'Consultation' ? (activity.details || 'Cardiologie') : 'Réception'}
                                     />
                                 ))
                             ) : (
-                                <div className="p-8 text-center text-[#4c9a8d] text-sm">Aucune activité récente.</div>
+                                <div className="p-8 text-center text-slate-500 text-sm">Aucune activité récente.</div>
                             )}
                         </div>
                     </div>
 
                     {/* Next Appointments */}
-                    <div className="bg-white dark:bg-[#152a26] rounded-xl border border-[#e7f3f1] dark:border-[#1e3a36] overflow-hidden shadow-sm">
-                        <div className="p-5 border-b border-[#e7f3f1] dark:border-[#1e3a36] text-left">
-                            <h3 className="text-[#0d1b19] dark:text-white font-bold text-lg">Prochains Rendez-vous</h3>
+                    <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm">
+                        <div className="p-5 border-b border-slate-100 text-left">
+                            <h3 className="text-slate-800 font-bold text-lg">Prochains Rendez-vous</h3>
                         </div>
                         <div className="overflow-x-auto">
                             <table className="w-full text-left">
-                                <thead className="bg-[#f6f8f8] dark:bg-white/5 text-[11px] uppercase tracking-wider text-[#4c9a8d] font-bold">
+                                <thead className="bg-emerald-600 text-xs uppercase tracking-wider text-white font-semibold">
                                     <tr>
-                                        <th className="px-6 py-3">Patient</th>
-                                        <th className="px-6 py-3">Date</th>
-                                        <th className="px-6 py-3">Heure</th>
-                                        <th className="px-6 py-3">Type</th>
-                                        <th className="px-6 py-3 text-right">Action</th>
+                                        <th className="px-6 py-3.5">Patient</th>
+                                        <th className="px-6 py-3.5">Date</th>
+                                        <th className="px-6 py-3.5">Heure</th>
+                                        <th className="px-6 py-3.5">Type</th>
+                                        <th className="px-6 py-3.5 text-right">Action</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-[#e7f3f1] dark:divide-[#1e3a36] text-sm">
+                                <tbody className="divide-y divide-slate-100 text-sm">
                                     {nextAppointments.length > 0 ? (
                                         nextAppointments.map((apt) => (
-                                            <tr key={apt.id}>
-                                                <td className="px-6 py-4 font-bold text-[#0d1b19] dark:text-white">{apt.patient_name}</td>
-                                                <td className="px-6 py-4 text-[#4c9a8d] font-medium">{apt.appointment_date}</td>
-                                                <td className="px-6 py-4 text-[#4c9a8d] font-medium">{apt.appointment_time}</td>
+                                            <tr key={apt.id} className="hover:bg-emerald-50/30 transition-colors">
+                                                <td className="px-6 py-4 font-semibold text-slate-800">{apt.patient?.full_name || apt.patient_name}</td>
+                                                <td className="px-6 py-4 text-slate-600">{apt.appointment_date ? moment(apt.appointment_date).format('DD/MM/YYYY') : '—'}</td>
+                                                <td className="px-6 py-4 text-slate-600">{(apt.appointment_time || apt.time || '').toString().substring(0, 5)}</td>
                                                 <td className="px-6 py-4">
-                                                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${apt.type === 'Follow-up'
-                                                        ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
-                                                        : 'bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400'
+                                                    <span className={`inline-block px-2.5 py-1 rounded-lg text-xs font-semibold ${apt.type === 'Follow-up'
+                                                        ? 'bg-sky-100 text-sky-700'
+                                                        : 'bg-emerald-100 text-emerald-700'
                                                         }`}>
                                                         {apt.type}
                                                     </span>
                                                 </td>
                                                 <td className="px-6 py-4 text-right">
-                                                    <button className="text-primary font-bold hover:underline">Détails</button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => navigate(`/appointments/${apt.id}`)}
+                                                        className="text-emerald-600 font-bold hover:text-emerald-700 py-1"
+                                                    >
+                                                        Détails
+                                                    </button>
                                                 </td>
                                             </tr>
                                         ))
                                     ) : (
                                         <tr>
-                                            <td colSpan={4} className="px-6 py-8 text-center text-[#4c9a8d] text-sm">Aucun rendez-vous prévu aujourd'hui.</td>
+                                            <td colSpan={5} className="px-6 py-10 text-center text-slate-500 text-sm">Aucun rendez-vous à venir.</td>
                                         </tr>
                                     )}
                                 </tbody>
@@ -190,18 +204,18 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
 
                 {/* Right side panel */}
                 <div className="flex flex-col gap-6">
-                    <div className="bg-white dark:bg-[#152a26] p-6 rounded-xl border border-[#e7f3f1] dark:border-[#1e3a36] shadow-sm text-left">
-                        <h3 className="text-[#0d1b19] dark:text-white font-bold text-lg mb-5 uppercase tracking-wider text-xs text-[#4c9a8d]">Actions Rapides</h3>
-                        <div className="grid grid-cols-1 gap-3">
+                    <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm text-left">
+                        <h3 className="text-emerald-600 font-bold text-sm mb-4 uppercase tracking-wider">Actions Rapides</h3>
+                        <div className="grid grid-cols-1 gap-2">
                             <QuickActionButton
                                 icon="person_add"
                                 label="Ajouter Patient"
-                                onClick={() => onNavigate('new-patient')}
+                                onClick={() => navigate('/patients/new')}
                             />
                             <QuickActionButton
                                 icon="ecg"
                                 label="Enregistrer ECG"
-                                onClick={() => onNavigate('patients')}
+                                onClick={() => navigate('/patients')}
                             />
                             <QuickActionButton
                                 icon="print"
@@ -211,20 +225,22 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
                         </div>
                     </div>
 
-                    <div className="bg-gradient-to-br from-[#42f0d3] to-[#2db6b8] p-6 rounded-xl text-[#0d1b19] shadow-lg relative overflow-hidden">
+                    <div className="bg-emerald-600 p-6 rounded-2xl text-white shadow-lg relative overflow-hidden">
                         <div className="relative z-10 text-left">
-                            <h4 className="font-black text-lg mb-2">Rappel Pratique</h4>
-                            <p className="text-[#0d1b19]/80 text-sm leading-relaxed mb-4 font-medium">Vous avez {stats.pendingReports} rapports en attente de finalisation.</p>
-                            <button className="bg-white text-[#0d1b19] px-4 py-2 rounded-lg text-xs font-bold uppercase shadow-sm hover:bg-gray-50 transition-colors">Réviser Maintenant</button>
+                            <h4 className="font-bold text-lg mb-2">Rappel Pratique</h4>
+                            <p className="text-white/90 text-sm leading-relaxed mb-4">Vous avez {stats.pending_reports} rapport{stats.pending_reports !== 1 ? 's' : ''} en attente de finalisation.</p>
+                            <button type="button" className="bg-white text-emerald-700 px-4 py-2.5 rounded-xl text-sm font-bold shadow-sm hover:bg-emerald-50 transition-colors">
+                                Réviser maintenant
+                            </button>
                         </div>
-                        <div className="absolute -right-4 -bottom-4 opacity-10">
-                            <span className="material-symbols-outlined text-[120px]">monitor_heart</span>
+                        <div className="absolute -right-4 -bottom-4 opacity-20">
+                            <span className="material-symbols-outlined text-[100px]">monitor_heart</span>
                         </div>
                     </div>
 
-                    <div className="p-4 rounded-xl border border-dashed border-[#e7f3f1] dark:border-[#1e3a36] text-center">
-                        <p className="text-[10px] text-[#4c9a8d] font-black uppercase tracking-widest mb-1">Affilié à</p>
-                        <p className="text-sm font-bold text-[#0d1b19] dark:text-white/80">CardioMed </p>
+                    <div className="p-4 rounded-2xl border border-dashed border-emerald-200 bg-white text-center">
+                        <p className="text-[10px] text-emerald-600 font-semibold uppercase tracking-widest mb-1">Affilié à</p>
+                        <p className="text-sm font-bold text-slate-700">CardioMed</p>
                     </div>
                 </div>
             </div>
@@ -239,15 +255,18 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
 };
 
 const QuickActionButton: React.FC<{ icon: string; label: string; onClick?: () => void }> = ({ icon, label, onClick }) => (
-    <button onClick={onClick} className="flex items-center gap-3 w-full p-4 bg-[#f6f8f8] dark:bg-white/5 rounded-xl hover:bg-[#42f0d3]/10 hover:text-primary transition-all group border border-transparent hover:border-[#42f0d3]/20">
-        <div className="size-10 rounded-lg bg-white dark:bg-[#152a26] shadow-sm flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
-            <span className="material-symbols-outlined">{icon}</span>
+    <button
+        type="button"
+        onClick={onClick}
+        className="flex items-center gap-3 w-full p-3.5 bg-white hover:bg-emerald-50 rounded-xl transition-all group border border-slate-100 hover:border-emerald-200 text-left"
+    >
+        <div className="size-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
+            <span className="material-symbols-outlined text-xl">{icon}</span>
         </div>
-        <span className="font-bold text-sm text-[#0d1b19] dark:text-white group-hover:text-primary transition-colors">{label}</span>
+        <span className="font-bold text-sm text-slate-700 group-hover:text-emerald-700 transition-colors">{label}</span>
     </button>
 );
 
-// Print ID Card Modal Component
 const PrintIdCardModal: React.FC<{ isOpen: boolean; onClose: () => void; }> = ({ isOpen, onClose }) => {
     const [search, setSearch] = useState('');
     const [patients, setPatients] = useState<any[]>([]);
@@ -256,8 +275,12 @@ const PrintIdCardModal: React.FC<{ isOpen: boolean; onClose: () => void; }> = ({
     const handleSearch = async (query: string) => {
         setSearch(query);
         if (query.length > 1) {
-            const results = await DatabaseService.searchPatients(query);
-            setPatients(results);
+            try {
+                const results = await patientService.searchPatients(query);
+                setPatients(results);
+            } catch (error) {
+                console.error("Search failed:", error);
+            }
         } else {
             setPatients([]);
         }
@@ -266,7 +289,6 @@ const PrintIdCardModal: React.FC<{ isOpen: boolean; onClose: () => void; }> = ({
     const handlePrint = () => {
         if (!selectedPatient) return;
 
-        // In a real app, this would generate a PDF or open a print window with specific CSS
         const printWindow = window.open('', '_blank');
         if (printWindow) {
             printWindow.document.write(`
@@ -274,13 +296,13 @@ const PrintIdCardModal: React.FC<{ isOpen: boolean; onClose: () => void; }> = ({
                     <head>
                         <title>Carte Patient - ${selectedPatient.full_name}</title>
                         <style>
-                            body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background: #f0f0f0; }
-                            .card { width: 350px; height: 200px; background: linear-gradient(135deg, #42f0d3 0%, #2db6b8 100%); border-radius: 16px; padding: 20px; color: #0d1b19; position: relative; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+                            body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background: #fff; }
+                            .card { width: 350px; height: 200px; background: #10b981; border-radius: 16px; padding: 20px; color: #fff; position: relative; box-shadow: 0 4px 20px rgba(5,150,105,0.25); }
                             .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
                             .logo { font-weight: 900; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
                             .title { font-size: 10px; font-weight: bold; opacity: 0.8; }
                             .content { display: flex; gap: 15px; }
-                            .avatar { width: 60px; height: 60px; background: white; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 24px; color: #2db6b8; }
+                            .avatar { width: 60px; height: 60px; background: white; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 24px; color: #059669; }
                             .info { flex: 1; }
                             .name { font-size: 16px; font-weight: 900; margin: 0 0 5px 0; text-transform: uppercase; }
                             .detail { font-size: 12px; font-weight: 600; margin-bottom: 2px; }
@@ -318,11 +340,11 @@ const PrintIdCardModal: React.FC<{ isOpen: boolean; onClose: () => void; }> = ({
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-white dark:bg-[#152a26] rounded-2xl w-full max-w-md overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200">
-                <div className="p-4 border-b border-[#e7f3f1] dark:border-[#1e3a36] flex justify-between items-center">
-                    <h3 className="font-bold text-lg dark:text-white">Imprimer Carte Patient</h3>
-                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-2xl border border-slate-100">
+                <div className="p-5 border-b border-slate-100 flex justify-between items-center">
+                    <h3 className="font-bold text-lg text-slate-800">Imprimer Carte Patient</h3>
+                    <button type="button" onClick={onClose} className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition-colors">
                         <span className="material-symbols-outlined">close</span>
                     </button>
                 </div>
@@ -331,67 +353,66 @@ const PrintIdCardModal: React.FC<{ isOpen: boolean; onClose: () => void; }> = ({
                     {!selectedPatient ? (
                         <>
                             <div className="relative">
-                                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">search</span>
+                                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">search</span>
                                 <input
                                     type="text"
                                     placeholder="Rechercher un patient..."
-                                    className="w-full pl-10 pr-4 py-2 bg-[#f6f8f8] dark:bg-white/5 border border-transparent focus:border-primary rounded-xl outline-none transition-all dark:text-white"
+                                    className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 rounded-xl outline-none transition-all text-slate-800"
                                     value={search}
                                     onChange={(e) => handleSearch(e.target.value)}
                                     autoFocus
                                 />
                             </div>
 
-                            <div className="max-h-[200px] overflow-y-auto space-y-2">
+                            <div className="max-h-[220px] overflow-y-auto space-y-1 rounded-xl border border-slate-100">
                                 {patients.map(p => (
                                     <div
                                         key={p.id}
-                                        className="p-3 hover:bg-[#f6f8f8] dark:hover:bg-white/5 rounded-xl cursor-pointer flex items-center gap-3 transition-colors"
+                                        className="p-3 hover:bg-emerald-50 rounded-lg cursor-pointer flex items-center gap-3 transition-colors"
                                         onClick={() => setSelectedPatient(p)}
                                     >
-                                        <div className="size-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">
+                                        <div className="size-9 rounded-full bg-emerald-600 flex items-center justify-center text-white font-bold text-sm">
                                             {p.full_name.charAt(0)}
                                         </div>
                                         <div>
-                                            <p className="font-bold text-sm text-[#0d1b19] dark:text-white">{p.full_name}</p>
-                                            <p className="text-xs text-[#4c9a8d]">{p.patient_id}</p>
+                                            <p className="font-bold text-sm text-slate-800">{p.full_name}</p>
+                                            <p className="text-xs text-slate-500 font-medium">{p.patient_id}</p>
                                         </div>
                                     </div>
                                 ))}
-                                {search.length > 1 && patients.length === 0 && (
-                                    <p className="text-center text-xs text-gray-400 py-4">Aucun patient trouvé</p>
-                                )}
                             </div>
                         </>
                     ) : (
                         <div className="text-center space-y-4">
-                            <div className="w-[300px] h-[180px] mx-auto bg-gradient-to-br from-[#42f0d3] to-[#2db6b8] rounded-xl p-4 text-left shadow-lg relative text-[#0d1b19]">
+                            <div className="w-[300px] h-[180px] mx-auto bg-emerald-600 rounded-2xl p-5 text-left shadow-lg relative text-white">
                                 <div className="flex justify-between items-start mb-4">
-                                    <span className="font-black text-xs opacity-70">FONDATION EBOGO</span>
+                                    <span className="font-bold text-xs opacity-90">FONDATION EBOGO</span>
                                 </div>
                                 <div className="flex gap-4">
-                                    <div className="size-12 bg-white rounded-lg flex items-center justify-center font-black text-xl text-[#2db6b8]">
+                                    <div className="size-12 bg-white rounded-xl flex items-center justify-center font-bold text-xl text-emerald-600">
                                         {selectedPatient.full_name.charAt(0)}
                                     </div>
                                     <div>
-                                        <p className="font-black text-lg uppercase leading-none mb-1">{selectedPatient.full_name}</p>
-                                        <p className="text-xs font-bold opacity-80">{selectedPatient.patient_id}</p>
+                                        <p className="font-bold text-lg uppercase leading-none mb-1">{selectedPatient.full_name}</p>
+                                        <p className="text-xs font-semibold opacity-90">{selectedPatient.patient_id}</p>
                                     </div>
                                 </div>
                             </div>
                             <div className="flex gap-3 justify-center pt-2">
                                 <button
+                                    type="button"
                                     onClick={() => setSelectedPatient(null)}
-                                    className="px-4 py-2 rounded-xl text-xs font-bold text-gray-500 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
+                                    className="px-4 py-2.5 rounded-xl text-sm font-bold text-slate-500 hover:bg-slate-50 transition-colors"
                                 >
                                     Changer
                                 </button>
                                 <button
+                                    type="button"
                                     onClick={handlePrint}
-                                    className="px-6 py-2 rounded-xl text-xs font-bold bg-primary text-[#0d1b19] hover:bg-primary/90 transition-colors flex items-center gap-2"
+                                    className="px-6 py-2.5 rounded-xl text-sm font-bold bg-emerald-600 text-white hover:bg-emerald-700 transition-colors flex items-center gap-2 shadow-md"
                                 >
-                                    <span className="material-symbols-outlined text-sm">print</span>
-                                    Imprimer
+                                    <span className="material-symbols-outlined text-lg">print</span>
+                                    Imprimer la carte
                                 </button>
                             </div>
                         </div>

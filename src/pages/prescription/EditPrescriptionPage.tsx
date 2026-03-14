@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from '../../components/ui/Button';
-import { DatabaseService } from '../../services/database';
+import { prescriptionService } from '../../services/api';
 
 interface Prescription {
     id: number;
@@ -8,9 +8,8 @@ interface Prescription {
     dosage: string;
     frequency: string;
     duration: string;
-    consultation_date: string;
     consultation_id: number;
-    instructions: string; // Assuming instructions can also be edited
+    instructions: string;
 }
 
 interface EditPrescriptionPageProps {
@@ -24,7 +23,7 @@ export const EditPrescriptionPage: React.FC<EditPrescriptionPageProps> = ({
     onBack,
     onSave,
 }) => {
-    const [editedDrug, setEditedDrug] = useState(prescription.drug);
+    const [editedDrug, setEditedDrug] = useState(prescription.drug || (prescription as any).name);
     const [editedDosage, setEditedDosage] = useState(prescription.dosage);
     const [editedFrequency, setEditedFrequency] = useState(prescription.frequency);
     const [editedDuration, setEditedDuration] = useState(prescription.duration);
@@ -42,10 +41,12 @@ export const EditPrescriptionPage: React.FC<EditPrescriptionPageProps> = ({
                 duration: editedDuration,
                 instructions: editedInstructions,
             };
-            // Assuming DatabaseService has an updatePrescription method
-            await DatabaseService.updatePrescription(updatedPrescription);
-            onSave(updatedPrescription); // Notify parent component of the update
-            onBack(); // Go back after saving
+            
+            const response = await prescriptionService.updatePrescription(updatedPrescription);
+            if (response.success) {
+                onSave(updatedPrescription);
+                onBack();
+            }
         } catch (error) {
             console.error('Failed to update prescription:', error);
             alert('Failed to update prescription. Please try again.');

@@ -1,47 +1,20 @@
-import React, { useState, useEffect } from 'react';
-import { getCurrentWindow } from '@tauri-apps/api/window';
-import { invoke } from '@tauri-apps/api/core';
+import React, { useState } from 'react';
+// import { getCurrentWindow } from '@tauri-apps/api/window';
+// import { invoke } from '@tauri-apps/api/core';
 import { useUpdater } from '../../hooks/useUpdater';
 
-const appWindow = getCurrentWindow();
-
+// const appWindow = getCurrentWindow();
 export const TitleBar: React.FC = () => {
-    const [appVersion, setAppVersion] = useState('...');
+    const [appVersion] = useState('0.1.0');
     const { updateAvailable, updateManifest, downloading, progress, installUpdate } = useUpdater();
-    const [isMaximized, setIsMaximized] = useState(false);
+    const [isMaximized] = useState(false); // setIsMaximized is unused as the related effect is commented out
 
-    useEffect(() => {
-        loadVersion();
-        const checkMaximized = async () => {
-            setIsMaximized(await appWindow.isMaximized());
-        };
-        checkMaximized();
-
-        // Listen to resize to update maximized state icon if needed (simplified)
-        const unlisten = appWindow.listen('tauri://resize', checkMaximized);
-        return () => { unlisten.then(f => f()); };
-    }, []);
-
-    const loadVersion = async () => {
-        try {
-            const version = await invoke<string>('get_app_version');
-            setAppVersion(version);
-        } catch (error) {
-            console.error('Failed to get app version:', error);
-            setAppVersion('0.1.0');
-        }
-    };
-
-    const handleMinimize = () => appWindow.minimize();
-    const handleMaximize = async () => {
-        await appWindow.toggleMaximize();
-        setIsMaximized(await appWindow.isMaximized());
-    };
-    const handleClose = () => appWindow.close();
+    const handleMinimize = () => { console.log('Minimize'); };
+    const handleMaximize = async () => { console.log('Maximize'); };
+    const handleClose = () => { console.log('Close'); };
 
     return (
         <div
-            data-tauri-drag-region
             className="h-titlebar bg-bg-surface dark:bg-dark-bg-surface flex items-center justify-between px-3 select-none shrink-0 border-b border-border dark:border-dark-border z-50 transition-colors duration-200"
         >
             {/* Left: Branding & Version */}

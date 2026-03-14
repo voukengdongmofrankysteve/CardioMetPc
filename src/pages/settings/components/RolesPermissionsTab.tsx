@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { DatabaseService } from '../../../services/database';
+import { securityService } from '../../../services/api';
 
 interface Permission {
     id: string;
@@ -50,15 +50,17 @@ export const RolesPermissionsTab: React.FC = () => {
     }, []);
 
     const loadPermissions = async () => {
+        setIsLoading(true);
         try {
-            const dbPermissions = await DatabaseService.getRolesPermissions();
+            const response = await securityService.getRolesPermissions();
+            const dbPermissions = response.success ? response.data : [];
 
             // Update permissions based on database data
             const updatedGroups = initialPermissionsGroups.map(group => ({
                 ...group,
                 permissions: group.permissions.map(perm => {
-                    const doctorPerm = dbPermissions.find(p => p.role === 'doctor' && p.permission === perm.id);
-                    const secretaryPerm = dbPermissions.find(p => p.role === 'secretary' && p.permission === perm.id);
+                    const doctorPerm = dbPermissions.find((p: any) => p.role === 'doctor' && p.permission === perm.id);
+                    const secretaryPerm = dbPermissions.find((p: any) => p.role === 'secretary' && p.permission === perm.id);
 
                     return {
                         ...perm,
@@ -94,10 +96,10 @@ export const RolesPermissionsTab: React.FC = () => {
             for (const group of permissionsGroups) {
                 for (const perm of group.permissions) {
                     if (perm.doctor !== 'locked') {
-                        await DatabaseService.updateRolePermission('doctor', perm.id, perm.doctor as boolean);
+                        await securityService.updateRolePermission('doctor', perm.id, perm.doctor as boolean);
                     }
                     if (perm.secretary !== 'locked') {
-                        await DatabaseService.updateRolePermission('secretary', perm.id, perm.secretary as boolean);
+                        await securityService.updateRolePermission('secretary', perm.id, perm.secretary as boolean);
                     }
                 }
             }
@@ -126,18 +128,18 @@ export const RolesPermissionsTab: React.FC = () => {
     }
 
     return (
-        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="bg-white dark:bg-[#152a26] rounded-2xl border border-[#e7f3f1] dark:border-[#1e3a36] overflow-hidden shadow-sm">
+        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm">
                 <table className="w-full text-left border-collapse">
                     <thead>
-                        <tr className="bg-gray-50/50 dark:bg-white/5 border-b border-[#e7f3f1] dark:border-[#1e3a36]">
-                            <th className="px-8 py-6 text-sm font-black text-[#0d1b19] dark:text-white uppercase tracking-wider">Access Permissions</th>
+                        <tr className="bg-slate-50/50 border-b border-slate-100">
+                            <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Access Permissions</th>
                             <th className="px-6 py-6 w-32 text-center">
                                 <div className="flex flex-col items-center gap-1">
-                                    <div className="size-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                                    <div className="size-8 rounded-lg bg-[#22c55e]/10 flex items-center justify-center text-[#22c55e]">
                                         <span className="material-symbols-outlined text-lg">medical_services</span>
                                     </div>
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-[#0d1b19] dark:text-white">Doctor</span>
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-900">Doctor</span>
                                 </div>
                             </th>
                             <th className="px-6 py-6 w-32 text-center">
@@ -145,7 +147,7 @@ export const RolesPermissionsTab: React.FC = () => {
                                     <div className="size-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-500">
                                         <span className="material-symbols-outlined text-lg">support_agent</span>
                                     </div>
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-[#0d1b19] dark:text-white">Secretary</span>
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-900">Secretary</span>
                                 </div>
                             </th>
                         </tr>
@@ -153,38 +155,38 @@ export const RolesPermissionsTab: React.FC = () => {
                     <tbody>
                         {permissionsGroups.map((group, groupIdx) => (
                             <React.Fragment key={groupIdx}>
-                                <tr className="bg-[#f6f8f8] dark:bg-white/5">
-                                    <td colSpan={3} className="px-8 py-3 text-[10px] font-black text-[#4c9a8d] uppercase tracking-[0.2em]">
+                                <tr className="bg-slate-50/30">
+                                    <td colSpan={3} className="px-8 py-3 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
                                         {group.title}
                                     </td>
                                 </tr>
                                 {group.permissions.map((perm, permIdx) => (
-                                    <tr key={perm.id} className="border-b border-[#e7f3f1] dark:border-[#1e3a36] hover:bg-gray-50/50 dark:hover:bg-white/5 transition-colors">
+                                    <tr key={perm.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
                                         <td className="px-8 py-5">
-                                            <p className="text-sm font-bold text-[#0d1b19] dark:text-white">{perm.label}</p>
-                                            <p className="text-xs text-[#4c9a8d] mt-0.5">{perm.desc}</p>
+                                            <p className="text-sm font-bold text-slate-900">{perm.label}</p>
+                                            <p className="text-xs text-slate-400 mt-0.5">{perm.desc}</p>
                                         </td>
                                         <td className="px-6 py-5 text-center">
                                             {perm.doctor === 'locked' ? (
-                                                <span className="material-symbols-outlined text-gray-300 dark:text-gray-600">lock</span>
+                                                <span className="material-symbols-outlined text-slate-200">lock</span>
                                             ) : (
                                                 <button
                                                     onClick={() => togglePermission(groupIdx, permIdx, 'doctor')}
-                                                    className={`inline-flex items-center justify-center size-6 rounded-lg border-2 transition-all cursor-pointer hover:scale-110 ${perm.doctor ? 'bg-primary border-primary text-[#0d1b19]' : 'border-[#e7f3f1] dark:border-[#1e3a36] hover:border-primary/50'}`}
+                                                    className={`inline-flex items-center justify-center size-6 rounded-lg border-2 transition-all cursor-pointer hover:scale-110 ${perm.doctor ? 'bg-[#22c55e] border-[#22c55e] text-white' : 'border-slate-200 hover:border-[#22c55e]/50 text-transparent'}`}
                                                 >
-                                                    {perm.doctor && <span className="material-symbols-outlined text-base font-black">check</span>}
+                                                    <span className="material-symbols-outlined text-base font-black">check</span>
                                                 </button>
                                             )}
                                         </td>
                                         <td className="px-6 py-5 text-center">
                                             {perm.secretary === 'locked' ? (
-                                                <span className="material-symbols-outlined text-gray-300 dark:text-gray-600">lock</span>
+                                                <span className="material-symbols-outlined text-slate-200">lock</span>
                                             ) : (
                                                 <button
                                                     onClick={() => togglePermission(groupIdx, permIdx, 'secretary')}
-                                                    className={`inline-flex items-center justify-center size-6 rounded-lg border-2 transition-all cursor-pointer hover:scale-110 ${perm.secretary ? 'bg-primary border-primary text-[#0d1b19]' : 'border-[#e7f3f1] dark:border-[#1e3a36] hover:border-primary/50'}`}
+                                                    className={`inline-flex items-center justify-center size-6 rounded-lg border-2 transition-all cursor-pointer hover:scale-110 ${perm.secretary ? 'bg-[#22c55e] border-[#22c55e] text-white' : 'border-slate-200 hover:border-[#22c55e]/50 text-transparent'}`}
                                                 >
-                                                    {perm.secretary && <span className="material-symbols-outlined text-base font-black">check</span>}
+                                                    <span className="material-symbols-outlined text-base font-black">check</span>
                                                 </button>
                                             )}
                                         </td>
@@ -194,22 +196,22 @@ export const RolesPermissionsTab: React.FC = () => {
                         ))}
                     </tbody>
                 </table>
-                <div className="p-8 bg-gray-50/30 dark:bg-white/5 flex justify-end gap-3">
+                <div className="p-8 bg-slate-50/30 flex justify-end gap-3">
                     <button
                         onClick={handleDiscard}
                         disabled={!hasChanges}
-                        className="px-6 py-2.5 text-[10px] font-black uppercase tracking-widest text-[#4c9a8d] hover:text-[#0d1b19] dark:hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="px-6 py-2.5 text-[10px] font-bold text-slate-400 uppercase tracking-widest hover:text-slate-900 transition-colors disabled:opacity-50"
                     >
                         Discard Changes
                     </button>
                     <button
                         onClick={handleSave}
                         disabled={!hasChanges || isSaving}
-                        className="px-8 py-2.5 bg-primary text-[#0d1b19] rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:brightness-105 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="px-8 py-2.5 bg-[#22c55e] text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-green-500/20 hover:bg-[#16a34a] transition-all flex items-center gap-2 disabled:opacity-50"
                     >
                         {isSaving ? (
                             <>
-                                <div className="w-4 h-4 border-2 border-[#0d1b19] border-t-transparent rounded-full animate-spin"></div>
+                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                                 Saving...
                             </>
                         ) : (
@@ -221,13 +223,13 @@ export const RolesPermissionsTab: React.FC = () => {
                 </div>
             </div>
 
-            <div className="bg-[#42f0d3]/5 border border-[#42f0d3]/20 rounded-2xl p-4 flex items-start gap-4">
-                <div className="size-10 rounded-xl bg-[#42f0d3]/10 flex items-center justify-center text-primary shrink-0">
+            <div className="bg-[#22c55e]/5 border border-[#22c55e]/20 rounded-2xl p-6 flex items-start gap-4">
+                <div className="size-10 rounded-xl bg-[#22c55e]/10 flex items-center justify-center text-[#22c55e] shrink-0">
                     <span className="material-symbols-outlined">info</span>
                 </div>
                 <div>
-                    <h4 className="text-sm font-black text-[#0d1b19] dark:text-white uppercase tracking-tight">Security Tip</h4>
-                    <p className="text-xs text-[#4c9a8d] font-medium leading-relaxed mt-1">
+                    <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight">Security Tip</h4>
+                    <p className="text-xs text-slate-400 font-medium leading-relaxed mt-1">
                         Changes to roles and permissions will be applied instantly to all assigned users. Make sure to notify staff before significant access removals.
                     </p>
                 </div>

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from '../../../components/ui/Button';
-import { DatabaseService } from '../../../services/database';
+import { userService } from '../../../services/api';
 
 interface DeleteUserModalProps {
     isOpen: boolean;
@@ -24,9 +24,13 @@ export const DeleteUserModal: React.FC<DeleteUserModalProps> = ({ isOpen, onClos
         setError('');
 
         try {
-            await DatabaseService.deleteUser(user.id);
-            onUserDeleted();
-            onClose();
+            const response = await userService.deleteUser(user.id);
+            if (response.success) {
+                onUserDeleted();
+                onClose();
+            } else {
+                setError(response.message || 'Failed to delete user');
+            }
         } catch (error) {
             console.error('Failed to delete user:', error);
             setError('Failed to delete user. Please try again.');
@@ -38,80 +42,86 @@ export const DeleteUserModal: React.FC<DeleteUserModalProps> = ({ isOpen, onClos
     if (!isOpen || !user) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white dark:bg-[#152a26] rounded-2xl border border-[#e7f3f1] dark:border-[#1e3a36] shadow-2xl w-full max-w-md mx-4 animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
+            <div className="bg-white rounded-3xl border border-slate-100 shadow-2xl w-full max-w-md mx-4 animate-in zoom-in-95 duration-300 overflow-hidden">
                 {/* Header */}
-                <div className="px-8 py-6 border-b border-[#e7f3f1] dark:border-[#1e3a36] flex items-center justify-between">
+                <div className="px-8 py-6 border-b border-slate-50 flex items-center justify-between bg-red-50/30">
                     <div className="flex items-center gap-3">
-                        <div className="size-10 rounded-xl bg-red-50 dark:bg-red-900/30 flex items-center justify-center">
-                            <span className="material-symbols-outlined text-red-600 dark:text-red-400 text-xl">warning</span>
+                        <div className="size-10 rounded-xl bg-red-100 flex items-center justify-center text-red-600">
+                            <span className="material-symbols-outlined text-xl">warning</span>
                         </div>
                         <div>
-                            <h2 className="text-xl font-black text-[#0d1b19] dark:text-white uppercase tracking-tight">Delete User</h2>
-                            <p className="text-xs text-[#4c9a8d] mt-0.5">This action cannot be undone</p>
+                            <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight">Delete User</h2>
+                            <p className="text-[10px] text-red-500 font-bold uppercase tracking-wider">Permanent Action</p>
                         </div>
                     </div>
                     <button
                         onClick={onClose}
-                        className="size-8 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 flex items-center justify-center text-[#4c9a8d] transition-colors"
+                        className="size-8 rounded-lg hover:bg-white/50 flex items-center justify-center text-slate-400 hover:text-slate-900 transition-all"
                     >
-                        <span className="material-symbols-outlined text-xl">close</span>
+                        <span className="material-symbols-outlined">close</span>
                     </button>
                 </div>
 
                 {/* Content */}
-                <div className="p-8 space-y-6">
-                    {error && (
-                        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 flex items-start gap-3">
-                            <span className="material-symbols-outlined text-red-600 dark:text-red-400 text-xl">error</span>
-                            <p className="text-sm font-medium text-red-800 dark:text-red-200">{error}</p>
-                        </div>
-                    )}
-
-                    <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-6">
-                        <p className="text-sm font-medium text-[#0d1b19] dark:text-white mb-4">
-                            Are you sure you want to delete this user?
-                        </p>
-                        <div className="flex items-center gap-3 p-4 bg-white dark:bg-[#152a26] rounded-lg border border-red-200 dark:border-red-800">
-                            <div className="size-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center text-red-600 dark:text-red-400 font-bold text-sm">
-                                {user.full_name.charAt(0)}
+                <div className="p-8">
+                    <div className="space-y-6">
+                        {error && (
+                            <div className="bg-red-50 border border-red-100 rounded-2xl p-4 flex items-start gap-3">
+                                <span className="material-symbols-outlined text-red-500">error</span>
+                                <p className="text-sm font-bold text-red-600">{error}</p>
                             </div>
-                            <div>
-                                <p className="font-bold text-sm text-[#0d1b19] dark:text-white">{user.full_name}</p>
-                                <p className="text-xs text-[#4c9a8d]">@{user.username}</p>
-                            </div>
-                        </div>
-                        <p className="text-xs text-red-600 dark:text-red-400 font-medium mt-4">
-                            ⚠️ This will permanently delete the user account and all associated data.
-                        </p>
-                    </div>
+                        )}
 
-                    {/* Footer */}
-                    <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#e7f3f1] dark:border-[#1e3a36]">
-                        <Button
-                            type="button"
-                            onClick={onClose}
-                            disabled={isDeleting}
-                            className="bg-white dark:bg-white/5 text-[#4c9a8d] border border-[#e7f3f1] dark:border-[#1e3a36] hover:border-primary px-6 h-11 text-[10px] font-black uppercase tracking-widest"
-                        >
-                            Cancel
-                        </Button>
-                        <Button
-                            type="button"
-                            onClick={handleDelete}
-                            disabled={isDeleting}
-                            icon={isDeleting ? undefined : "delete"}
-                            className="bg-red-600 hover:bg-red-700 text-white px-6 h-11 text-[10px] font-black uppercase tracking-widest shadow-lg shadow-red-600/20 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            {isDeleting ? (
-                                <div className="flex items-center gap-2">
-                                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                    Deleting...
+                        <div className="text-center space-y-4">
+                            <p className="text-sm font-bold text-slate-600">
+                                You are about to permanently remove this user account.
+                            </p>
+                            
+                            <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 border-dashed">
+                                <div className="size-16 rounded-full bg-white shadow-sm border border-slate-100 flex items-center justify-center text-slate-900 font-black text-xl mx-auto mb-3">
+                                    {user.full_name.charAt(0)}
                                 </div>
-                            ) : (
-                                'Delete User'
-                            )}
-                        </Button>
+                                <h3 className="font-black text-slate-900 uppercase tracking-tight">{user.full_name}</h3>
+                                <p className="text-xs text-slate-400 font-medium">@{user.username}</p>
+                            </div>
+
+                            <div className="bg-red-50 rounded-xl p-4 border border-red-100">
+                                <p className="text-[11px] text-red-600 font-bold leading-relaxed">
+                                    This action will revoke all system access for this user. This process cannot be undone.
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Footer Actions */}
+                        <div className="flex flex-col gap-3 pt-4">
+                            <Button
+                                type="button"
+                                onClick={handleDelete}
+                                disabled={isDeleting}
+                                className="bg-red-600 hover:bg-red-700 text-white w-full h-14 rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-xl shadow-red-600/20 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+                            >
+                                {isDeleting ? (
+                                    <>
+                                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                        Processing...
+                                    </>
+                                ) : (
+                                    <>
+                                        <span className="material-symbols-outlined text-lg">delete_forever</span>
+                                        Confirm Deletion
+                                    </>
+                                )}
+                            </Button>
+                            <button
+                                type="button"
+                                onClick={onClose}
+                                disabled={isDeleting}
+                                className="w-full h-12 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-900 transition-all"
+                            >
+                                Nevermind, Cancel
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>

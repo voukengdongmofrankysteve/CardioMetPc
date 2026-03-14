@@ -1,20 +1,26 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { Button } from '../../components/ui/Button';
-import { DatabaseService } from '../../services/database';
+import { examService } from '../../services/api';
 
 interface ExamDetailsPageProps {
-    examId: string;
-    patientId: string;
-    onBack: () => void;
 }
 
-export const ExamDetailsPage: React.FC<ExamDetailsPageProps> = ({ examId, patientId, onBack }) => {
+export const ExamDetailsPage: React.FC<ExamDetailsPageProps> = () => {
+    const navigate = useNavigate();
+    const { id: examId } = useParams<{ id: string }>();
+    const location = useLocation();
+    const patientId = location.state?.patientId || '';
     const [exam, setExam] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         const loadExam = async () => {
             try {
+                if (!examId) {
+                    console.error("Exam ID is missing");
+                    return;
+                }
                 // examId might be prefixed 'ecg-' or 'ett-' from the list. Remove prefix if present.
                 const realId = parseInt(examId.replace(/^(ecg-|ett-)/, ''));
                 if (isNaN(realId)) {
@@ -22,8 +28,20 @@ export const ExamDetailsPage: React.FC<ExamDetailsPageProps> = ({ examId, patien
                     return;
                 }
 
-                const data = await DatabaseService.getExamById(realId);
-                setExam(data);
+                const response = await examService.getExamById(realId);
+                if (response.success) {
+                    // Flatten data if needed
+                    const data = response.data;
+                    setExam({
+                        id: data.id,
+                        date: data.date,
+                        doctor_name: data.exam?.doctor_name, // If provided in backend
+                        ecg_interpretation: data.exam?.ecg_interpretation,
+                        ett_fevg: data.exam?.ett_fevg,
+                        ett_lvedd: data.exam?.ett_lvedd,
+                        ett_interpretation: data.exam?.ett_interpretation
+                    });
+                }
             } catch (error) {
                 console.error("Error loading exam:", error);
             } finally {
@@ -46,7 +64,7 @@ export const ExamDetailsPage: React.FC<ExamDetailsPageProps> = ({ examId, patien
         return (
             <div className="flex flex-col items-center justify-center min-h-screen bg-[var(--color-bg-main)] dark:bg-[var(--color-dark-bg-main)]">
                 <p className="text-[var(--color-danger)] font-bold">Examen introuvable.</p>
-                <Button onClick={onBack}>Retour</Button>
+                <Button onClick={() => navigate(-1)}>Retour</Button>
             </div>
         );
     }
@@ -62,7 +80,7 @@ export const ExamDetailsPage: React.FC<ExamDetailsPageProps> = ({ examId, patien
             <header className="flex items-center justify-between whitespace-nowrap border-b border-solid border-[var(--color-border)] dark:border-[var(--color-dark-border)] bg-[var(--color-bg-surface)] dark:bg-[var(--color-dark-bg-surface)] px-8 py-3 sticky top-0 z-50 shrink-0">
                 <div className="flex items-center gap-6">
                     <button
-                        onClick={onBack}
+                        onClick={() => navigate(-1)}
                         className="flex items-center text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors"
                     >
                         <span className="material-symbols-outlined">arrow_back</span>

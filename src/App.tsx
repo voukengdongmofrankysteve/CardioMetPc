@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { TitleBar } from './components/layout/TitleBar';
 import { LoginPage } from './pages/auth/LoginPage';
 import { DashboardPage } from './pages/dashboard/DashboardPage';
@@ -18,263 +19,95 @@ import { AppointmentDetailsPage } from './pages/appointments/AppointmentDetailsP
 import { SettingsPage } from './pages/settings/SettingsPage';
 import { Sidebar } from './components/layout/Sidebar';
 import { UpdateModal } from './components/modals/UpdateModal';
-import { DatabaseService } from './services/database';
-import { invoke } from '@tauri-apps/api/core';
+import { authService } from './services/api';
 import './App.css';
-
-type Page = 'dashboard' | 'appointments' | 'appointment-details' | 'patients' | 'patient-prescriptions' | 'new-patient' | 'patient-details' | 'consultations' | 'new-consultation' | 'consultation-details' | 'archives' | 'prescriptions' | 'prescription-templates' | 'stats' | 'settings' | 'exam-details';
-
-// Helper function to compare versions
-const compareVersions = (current: string, required: string): boolean => {
-    const currentParts = current.split('.').map(Number);
-    const requiredParts = required.split('.').map(Number);
-
-    for (let i = 0; i < Math.max(currentParts.length, requiredParts.length); i++) {
-        const curr = currentParts[i] || 0;
-        const req = requiredParts[i] || 0;
-
-        if (curr < req) return false; // Update needed
-        if (curr > req) return true;  // Current is newer
-    }
-
-    return true; // Versions are equal
-};
 
 const App: React.FC = () => {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
-    const [currentPage, setCurrentPage] = useState<Page>('dashboard');
-    const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
-    const [selectedConsultationId, setSelectedConsultationId] = useState<string | null>(null);
-    const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
-    const [selectedPatientDbId, setSelectedPatientDbId] = useState<number | null>(null);
-    const [selectedPatientName, setSelectedPatientName] = useState<string | null>(null);
-    const [selectedAppointmentId, setSelectedAppointmentId] = useState<number | null>(null);
+    const navigate = useNavigate();
+    const location = useLocation();
 
-    // Version checking state
+    // Version checking state (kept for compatibility, though currently unused)
     const [showUpdateModal, setShowUpdateModal] = useState(false);
-    const [currentVersion, setCurrentVersion] = useState('0.1.0');
-    const [requiredVersion, setRequiredVersion] = useState('0.1.0');
-    const [releaseNotes, setReleaseNotes] = useState('');
-    const [updatePriority, setUpdatePriority] = useState(false);
+    const [currentVersion] = useState('0.1.0');
+    const [requiredVersion] = useState('0.1.0');
+    const [releaseNotes] = useState('');
+    const [updatePriority] = useState(false);
 
     // Check for persisted login
     useEffect(() => {
         const storedUser = localStorage.getItem('cardio_user');
         if (storedUser) {
             setIsLoggedIn(true);
+        } else if (location.pathname !== '/login') {
+            navigate('/login');
         }
-    }, []);
+    }, [navigate, location.pathname]);
 
-    // Check version on mount and whenever login status or page changes
-    useEffect(() => {
-        checkVersion();
-    }, [isLoggedIn, currentPage]);
-
-    const checkVersion = async () => {
+    const handleLogout = async () => {
         try {
-            // Get current app version and platform
-            const [appVersion, platform] = await Promise.all([
-                invoke<string>('get_app_version'),
-                invoke<string>('get_app_platform')
-            ]);
-
-            setCurrentVersion(appVersion);
-
-            // Get required version from database
-            const versionRequirement = await DatabaseService.getLatestVersion(platform);
-
-            if (versionRequirement) {
-                const isUpToDate = compareVersions(appVersion, versionRequirement.version);
-
-                if (!isUpToDate) {
-                    // Show update modal
-                    setRequiredVersion(versionRequirement.version);
-                    setReleaseNotes(versionRequirement.value || '');
-                    setUpdatePriority(versionRequirement.priority);
-                    setShowUpdateModal(true);
-                }
-            }
+            await authService.logout();
         } catch (error) {
-            console.error('Version check failed:', error);
+            console.error('Logout error:', error);
+            localStorage.removeItem('cardio_token');
+            localStorage.removeItem('cardio_user');
         }
-    };
-
-    const handleCloseUpdateModal = () => {
-        if (!updatePriority) {
-            setShowUpdateModal(false);
-        }
-    };
-
-    const handleLogout = () => {
-        localStorage.removeItem('cardio_user');
         setIsLoggedIn(false);
-        setCurrentPage('dashboard'); // Reset page
+        navigate('/login');
     };
 
-    if (!isLoggedIn) {
+    const handleLoginSuccess = () => {
+        setIsLoggedIn(true);
+        navigate('/dashboard');
+    };
+
+    if (!isLoggedIn && location.pathname !== '/login') {
+        return null; // Or a loading spinner while checking useEffect
+    }
+
+    if (location.pathname === '/login') {
         return (
             <div className="flex flex-col h-screen overflow-hidden bg-white dark:bg-[#101f22]">
                 <TitleBar />
-                <LoginPage onLogin={() => setIsLoggedIn(true)} />
-                <UpdateModal
-                    isOpen={showUpdateModal}
-                    currentVersion={currentVersion}
-                    requiredVersion={requiredVersion}
-                    releaseNotes={releaseNotes}
-                    priority={updatePriority}
-                    onClose={handleCloseUpdateModal}
-                />
+                <LoginPage onLogin={handleLoginSuccess} />
             </div>
         );
     }
 
-    const renderPage = () => {
-        switch (currentPage) {
-            case 'dashboard':
-                return <DashboardPage onNavigate={(page: string) => {
-                    if (page === 'new-patient') setSelectedPatientId(null);
-                    setCurrentPage(page as any);
-                }} />;
-            case 'appointments':
-                return <AppointmentsPage
-                    onViewDetails={(id) => {
-                        setSelectedAppointmentId(id);
-                        setCurrentPage('appointment-details');
-                    }}
-                />;
-            case 'appointment-details':
-                return (
-                    <AppointmentDetailsPage
-                        appointmentId={selectedAppointmentId || 0}
-                        onBack={() => setCurrentPage('appointments')}
-                    />
-                );
-            case 'patients':
-                return <PatientPage
-                    onAddPatient={() => {
-                        setSelectedPatientId(null);
-                        setCurrentPage('new-patient');
-                    }}
-                    onStartConsultation={() => setCurrentPage('new-consultation')}
-                    onViewDetails={(id) => {
-                        setSelectedPatientId(id);
-                        setCurrentPage('patient-details');
-                    }}
-                    onViewPrescriptions={(id, dbId, name) => {
-                        setSelectedPatientId(id);
-                        setSelectedPatientDbId(dbId);
-                        setSelectedPatientName(name);
-                        setCurrentPage('patient-prescriptions');
-                    }}
-                    onEditPatient={(id) => {
-                        setSelectedPatientId(id);
-                        setCurrentPage('new-patient');
-                    }}
-                    onArchivePatient={(_id) => setCurrentPage('archives')}
-                />;
-            case 'new-patient':
-                return <NewPatientPage
-                    patientId={selectedPatientId || undefined}
-                    onBack={() => {
-                        setSelectedPatientId(null);
-                        setCurrentPage('patients');
-                    }}
-                    onCancel={() => {
-                        setSelectedPatientId(null);
-                        setCurrentPage('patients');
-                    }}
-                />;
-            case 'patient-details':
-                return <PatientDetailsPage
-                    patientId={selectedPatientId || ''}
-                    onBack={() => setCurrentPage('patients')}
-                    onStartConsultation={() => setCurrentPage('new-consultation')}
-                    onViewExam={(id) => {
-                        setSelectedExamId(id);
-                        setCurrentPage('exam-details');
-                    }}
-                    onEditPatient={(id) => {
-                        setSelectedPatientId(id);
-                        setCurrentPage('new-patient');
-                    }}
-                />;
-            case 'consultations':
-                return <ConsultationListPage
-                    onNewConsultation={() => setCurrentPage('new-consultation')}
-                    onViewDetails={(id) => {
-                        setSelectedConsultationId(id);
-                        setCurrentPage('consultation-details');
-                    }}
-                />;
-            case 'new-consultation':
-                return <ConsultationPage
-                    onBack={() => setCurrentPage('consultations')}
-                    onComplete={() => setCurrentPage('consultations')}
-                    onViewDetails={(id) => {
-                        setSelectedPatientId(id);
-                        setCurrentPage('patient-details');
-                    }}
-                />;
-            case 'consultation-details':
-                return <ConsultationDetailsPage
-                    consultationId={selectedConsultationId || undefined}
-                    onBack={() => setCurrentPage('consultations')}
-                    onEditPatient={(id) => {
-                        setSelectedPatientId(id);
-                        setCurrentPage('new-patient');
-                    }}
-                />;
-            case 'prescriptions':
-                return <PrescriptionPage />;
-            case 'prescription-templates':
-                return <PrescriptionTemplatesPage />;
-            case 'archives':
-                return <ArchivePage onViewExam={(id, patientId) => {
-                    setSelectedExamId(id);
-                    setSelectedPatientId(patientId);
-                    setCurrentPage('exam-details');
-                }} />;
-            case 'settings':
-                return <SettingsPage />;
-            case 'exam-details':
-                return <ExamDetailsPage
-                    examId={selectedExamId || ''}
-                    patientId={selectedPatientId || ''}
-                    onBack={() => setCurrentPage('patient-details')}
-                />;
-            case 'patient-prescriptions':
-                return <PatientPrescriptionsPage
-                    patientId={selectedPatientId || ''}
-                    patientDbId={selectedPatientDbId || 0}
-                    patientName={selectedPatientName || ''}
-                    onBack={() => setCurrentPage('patients')}
-                    onEditPrescription={(px) => {
-                        // For now just console log, or we could navigate to Prescription editor
-                        console.log('Edit PX', px);
-                    }}
-                    onViewPrescription={(px) => {
-                        console.log('View PX', px);
-                    }}
-                />;
-            default:
-                return <DashboardPage onNavigate={(page: string) => {
-                    if (page === 'new-patient') setSelectedPatientId(null);
-                    setCurrentPage(page as any);
-                }} />;
-        }
-    };
-
     return (
         <div className="flex flex-col h-screen overflow-hidden bg-bg-main dark:bg-dark-bg-main font-sans text-text-main dark:text-dark-text-main transition-colors duration-200 print:h-auto print:overflow-visible">
-            <div className="print:hidden">
-                <TitleBar />
-            </div>
             <div className="flex flex-1 overflow-hidden print:overflow-visible print:h-auto">
                 <div className="print:hidden">
-                    <Sidebar activePage={currentPage} onPageChange={setCurrentPage} onLogout={handleLogout} />
+                    <Sidebar onLogout={handleLogout} />
                 </div>
                 <main className="flex-1 overflow-y-auto bg-bg-main dark:bg-dark-bg-main p-6 print:p-0 print:overflow-visible print:bg-white">
-                    {renderPage()}
+                    <Routes>
+                        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                        <Route path="/dashboard" element={<DashboardPage />} />
+                        
+                        <Route path="/appointments" element={<AppointmentsPage />} />
+                        <Route path="/appointments/:id" element={<AppointmentDetailsPage />} />
+                        
+                        <Route path="/patients" element={<PatientPage />} />
+                        <Route path="/patients/new" element={<NewPatientPage />} />
+                        <Route path="/patients/edit/:id" element={<NewPatientPage />} />
+                        <Route path="/patients/:id" element={<PatientDetailsPage />} />
+                        <Route path="/patients/:id/prescriptions" element={<PatientPrescriptionsPage />} />
+
+                        <Route path="/consultations" element={<ConsultationListPage />} />
+                        <Route path="/consultations/new/:patientId?" element={<ConsultationPage />} />
+                        <Route path="/consultations/:id" element={<ConsultationDetailsPage />} />
+
+                        <Route path="/prescriptions" element={<PrescriptionPage />} />
+                        <Route path="/prescription-templates" element={<PrescriptionTemplatesPage />} />
+                        
+                        <Route path="/archives" element={<ArchivePage />} />
+                        <Route path="/archives/exams/:id" element={<ExamDetailsPage />} />
+                        
+                        <Route path="/settings" element={<SettingsPage />} />
+                        
+                        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+                    </Routes>
                 </main>
             </div>
             <UpdateModal
@@ -283,7 +116,7 @@ const App: React.FC = () => {
                 requiredVersion={requiredVersion}
                 releaseNotes={releaseNotes}
                 priority={updatePriority}
-                onClose={handleCloseUpdateModal}
+                onClose={() => setShowUpdateModal(false)}
             />
         </div>
     );

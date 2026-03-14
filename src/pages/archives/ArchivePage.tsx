@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '../../components/ui/Button';
-import { DatabaseService } from '../../services/database';
+import { examService } from '../../services/api';
 
 interface ExamFile {
     id: number;
@@ -13,10 +14,10 @@ interface ExamFile {
 }
 
 interface ArchivePageProps {
-    onViewExam: (id: string, patientId: string) => void;
 }
 
-export const ArchivePage: React.FC<ArchivePageProps> = ({ onViewExam }) => {
+export const ArchivePage: React.FC<ArchivePageProps> = () => {
+    const navigate = useNavigate();
     const [search, setSearch] = useState('');
     const [filterType, setFilterType] = useState<'ALL' | 'ECG' | 'ETT'>('ALL');
     const [files, setFiles] = useState<ExamFile[]>([]);
@@ -29,21 +30,23 @@ export const ArchivePage: React.FC<ArchivePageProps> = ({ onViewExam }) => {
     const loadData = async () => {
         setIsLoading(true);
         try {
-            const data = await DatabaseService.getAllExams();
-            // Transform data
-            const formatted: ExamFile[] = data.map(item => {
-                const isECG = !!item.ecg_interpretation;
-                return {
-                    id: item.id,
-                    patient_name: item.patient_name,
-                    patient_code: item.patient_code,
-                    type: isECG ? 'ECG' : 'ETT',
-                    date: new Date(item.date).toLocaleDateString(),
-                    result: isECG ? item.ecg_interpretation : `FEVG: ${item.ett_fevg || '?'}%`,
-                    file_status: 'Available' // Assuming available if record exists
-                };
-            });
-            setFiles(formatted);
+            const response = await examService.getExams();
+            if (response.success) {
+                // Transform data
+                const formatted: ExamFile[] = response.data.map((item: any) => {
+                    const isECG = !!item.ecg_interpretation;
+                    return {
+                        id: item.id,
+                        patient_name: item.patient_name,
+                        patient_code: item.patient_code,
+                        type: isECG ? 'ECG' : 'ETT',
+                        date: new Date(item.date).toLocaleDateString(),
+                        result: isECG ? item.ecg_interpretation : `FEVG: ${item.ett_fevg || '?'}%`,
+                        file_status: 'Available'
+                    };
+                });
+                setFiles(formatted);
+            }
         } catch (error) {
             console.error("Failed to load archives:", error);
         } finally {
@@ -137,7 +140,7 @@ export const ArchivePage: React.FC<ArchivePageProps> = ({ onViewExam }) => {
                                             variant="outline"
                                             className="flex-1 h-9 text-[10px] uppercase font-black"
                                             onClick={() => {
-                                                onViewExam(String(file.id), file.patient_code);
+                                                navigate(`/archives/exams/${file.id}`, { state: { patientId: file.patient_code } });
                                             }}
                                         >
                                             Voir Détails

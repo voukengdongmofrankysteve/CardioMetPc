@@ -1,24 +1,21 @@
 import React from 'react';
+import { NavLink } from 'react-router-dom';
 
 interface SidebarProps {
-    activePage: string;
-    onPageChange: (page: any) => void;
     onLogout: () => void;
 }
 
 const navItems = [
-    { id: 'dashboard', label: 'Tableau de bord', icon: 'grid_view' },
-    { id: 'appointments', label: 'Rendez-vous', icon: 'calendar_month' },
-    { id: 'patients', label: 'Patients', icon: 'groups' },
-    { id: 'consultations', label: 'Consultations', icon: 'stethoscope' },
-    // { id: 'archives', label: 'Archives', icon: 'folder_open' },
-    { id: 'prescriptions', label: 'Ordonnances', icon: 'medication' },
-    { id: 'prescription-templates', label: 'Modèles Rx', icon: 'description' },
-    // { id: 'stats', label: 'Statistiques', icon: 'bar_chart' },
-    { id: 'settings', label: 'Paramètres', icon: 'settings' },
+    { id: 'dashboard', label: 'Tableau de bord', icon: 'grid_view', path: '/dashboard' },
+    { id: 'appointments', label: 'Rendez-vous', icon: 'calendar_month', path: '/appointments' },
+    { id: 'patients', label: 'Patients', icon: 'groups', path: '/patients' },
+    { id: 'consultations', label: 'Consultations', icon: 'stethoscope', path: '/consultations' },
+    { id: 'prescriptions', label: 'Ordonnances', icon: 'medication', path: '/prescriptions' },
+    { id: 'prescription-templates', label: 'Modèles Rx', icon: 'description', path: '/prescription-templates' },
+    { id: 'settings', label: 'Paramètres', icon: 'settings', path: '/settings' },
 ];
 
-export const Sidebar: React.FC<SidebarProps> = ({ activePage, onPageChange, onLogout }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ onLogout }) => {
     return (
         <aside className="w-64 flex flex-col bg-bg-sidebar dark:bg-dark-bg-sidebar border-r border-border dark:border-dark-border shrink-0 h-full transition-colors duration-200">
             {/* Nav Items */}
@@ -27,24 +24,30 @@ export const Sidebar: React.FC<SidebarProps> = ({ activePage, onPageChange, onLo
                     Menu Principal
                 </div>
                 {navItems.map((item) => (
-                    <button
+                    <NavLink
                         key={item.id}
-                        onClick={() => onPageChange(item.id)}
-                        className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group relative
-                            ${activePage === item.id
+                        to={item.path}
+                        className={({ isActive }) => 
+                            `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group relative
+                            ${isActive
                                 ? 'bg-primary/10 text-primary font-semibold'
                                 : 'text-text-muted dark:text-dark-text-muted hover:bg-bg-main dark:hover:bg-dark-bg-main hover:text-text-main dark:hover:text-dark-text-main font-medium'
-                            }`}
+                            }`
+                        }
                     >
-                        <span className={`material-symbols-outlined text-[20px] ${activePage === item.id ? 'fill-current' : ''}`}>
-                            {item.icon}
-                        </span>
-                        <span className="text-sm">{item.label}</span>
+                        {({ isActive }) => (
+                            <>
+                                <span className={`material-symbols-outlined text-[20px] ${isActive ? 'fill-current' : ''}`}>
+                                    {item.icon}
+                                </span>
+                                <span className="text-sm">{item.label}</span>
 
-                        {activePage === item.id && (
-                            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-primary rounded-r-full"></div>
+                                {isActive && (
+                                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-primary rounded-r-full"></div>
+                                )}
+                            </>
                         )}
-                    </button>
+                    </NavLink>
                 ))}
             </div>
 

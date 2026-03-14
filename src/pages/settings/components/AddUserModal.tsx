@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from '../../../components/ui/Button';
-import { DatabaseService } from '../../../services/database';
+import { userService } from '../../../services/api';
 
 interface AddUserModalProps {
     isOpen: boolean;
@@ -42,37 +42,30 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onU
 
         setIsSubmitting(true);
         try {
-            // In a real app, you'd hash the password on the backend
-            // For now, we'll use a simple hash (NOT secure for production)
-            const passwordHash = btoa(formData.password); // Base64 encoding (NOT secure!)
-
-            console.log('Creating user with data:', {
+            const response = await userService.createUser({
                 username: formData.username,
+                password: formData.password,
                 full_name: formData.fullName,
                 role: formData.role,
                 email: formData.email || undefined
             });
 
-            await DatabaseService.createUser({
-                username: formData.username,
-                password_hash: passwordHash,
-                full_name: formData.fullName,
-                role: formData.role,
-                email: formData.email || undefined
-            });
+            if (response.success) {
+                // Reset form
+                setFormData({
+                    username: '',
+                    password: '',
+                    confirmPassword: '',
+                    fullName: '',
+                    role: 'secretary',
+                    email: ''
+                });
 
-            // Reset form
-            setFormData({
-                username: '',
-                password: '',
-                confirmPassword: '',
-                fullName: '',
-                role: 'secretary',
-                email: ''
-            });
-
-            onUserAdded();
-            onClose();
+                onUserAdded();
+                onClose();
+            } else {
+                setError(response.message || 'Failed to create user');
+            }
         } catch (error: any) {
             console.error('Failed to create user:', error);
             console.error('Error details:', {
@@ -89,155 +82,162 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onU
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white dark:bg-[#152a26] rounded-2xl border border-[#e7f3f1] dark:border-[#1e3a36] shadow-2xl w-full max-w-2xl mx-4 animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
+            <div className="bg-white rounded-3xl border border-slate-100 shadow-2xl w-full max-w-2xl mx-4 overflow-hidden animate-in zoom-in-95 duration-300">
                 {/* Header */}
-                <div className="px-8 py-6 border-b border-[#e7f3f1] dark:border-[#1e3a36] flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <div className="size-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                            <span className="material-symbols-outlined text-primary text-xl">person_add</span>
+                <div className="px-10 py-8 border-b border-slate-50 flex items-center justify-between bg-slate-50/20">
+                    <div className="flex items-center gap-4">
+                        <div className="size-12 rounded-2xl bg-[#22c55e]/10 flex items-center justify-center text-[#22c55e]">
+                            <span className="material-symbols-outlined text-2xl">person_add</span>
                         </div>
                         <div>
-                            <h2 className="text-xl font-black text-[#0d1b19] dark:text-white uppercase tracking-tight">Add New User</h2>
-                            <p className="text-xs text-[#4c9a8d] mt-0.5">Create a new user account</p>
+                            <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Add New User</h2>
+                            <p className="text-xs text-slate-400 mt-1 font-medium">Create a new access account for the system</p>
                         </div>
                     </div>
                     <button
                         onClick={onClose}
-                        className="size-8 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 flex items-center justify-center text-[#4c9a8d] transition-colors"
+                        className="size-10 rounded-xl hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-900 transition-all"
                     >
-                        <span className="material-symbols-outlined text-xl">close</span>
+                        <span className="material-symbols-outlined">close</span>
                     </button>
                 </div>
 
                 {/* Form */}
-                <form onSubmit={handleSubmit} className="p-8 space-y-6">
-                    {error && (
-                        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 flex items-start gap-3">
-                            <span className="material-symbols-outlined text-red-600 dark:text-red-400 text-xl">error</span>
-                            <p className="text-sm font-medium text-red-800 dark:text-red-200">{error}</p>
-                        </div>
-                    )}
+                <form onSubmit={handleSubmit} className="p-10">
+                    <div className="space-y-8">
+                        {error && (
+                            <div className="bg-red-50 border border-red-100 rounded-2xl p-5 flex items-start gap-4 animate-in slide-in-from-top-2">
+                                <span className="material-symbols-outlined text-red-500">error</span>
+                                <p className="text-sm font-bold text-red-600 leading-tight">{error}</p>
+                            </div>
+                        )}
 
-                    <div className="grid grid-cols-2 gap-6">
-                        {/* Username */}
-                        <div>
-                            <label className="block text-[10px] font-black text-[#4c9a8d] uppercase tracking-widest mb-2">
-                                Username <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                type="text"
-                                required
-                                className="w-full bg-[#f6f8f8] dark:bg-white/5 border border-[#e7f3f1] dark:border-[#1e3a36] rounded-xl py-3 px-4 text-sm font-medium focus:border-primary outline-none transition-all"
-                                value={formData.username}
-                                onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                                placeholder="johndoe"
-                            />
-                        </div>
-
-                        {/* Full Name */}
-                        <div>
-                            <label className="block text-[10px] font-black text-[#4c9a8d] uppercase tracking-widest mb-2">
-                                Full Name <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                type="text"
-                                required
-                                className="w-full bg-[#f6f8f8] dark:bg-white/5 border border-[#e7f3f1] dark:border-[#1e3a36] rounded-xl py-3 px-4 text-sm font-medium focus:border-primary outline-none transition-all"
-                                value={formData.fullName}
-                                onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                                placeholder="John Doe"
-                            />
-                        </div>
-
-                        {/* Email */}
-                        <div>
-                            <label className="block text-[10px] font-black text-[#4c9a8d] uppercase tracking-widest mb-2">
-                                Email
-                            </label>
-                            <input
-                                type="email"
-                                className="w-full bg-[#f6f8f8] dark:bg-white/5 border border-[#e7f3f1] dark:border-[#1e3a36] rounded-xl py-3 px-4 text-sm font-medium focus:border-primary outline-none transition-all"
-                                value={formData.email}
-                                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                placeholder="john@example.com"
-                            />
-                        </div>
-
-                        {/* Role */}
-                        <div>
-                            <label className="block text-[10px] font-black text-[#4c9a8d] uppercase tracking-widest mb-2">
-                                Role <span className="text-red-500">*</span>
-                            </label>
-                            <select
-                                required
-                                className="w-full bg-[#f6f8f8] dark:bg-white/5 border border-[#e7f3f1] dark:border-[#1e3a36] rounded-xl py-3 px-4 text-sm font-medium focus:border-primary outline-none transition-all"
-                                value={formData.role}
-                                onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                            >
-                                <option value="doctor">Doctor</option>
-                                <option value="secretary">Secretary</option>
-                                <option value="admin">Administrator</option>
-                            </select>
-                        </div>
-
-                        {/* Password */}
-                        <div>
-                            <label className="block text-[10px] font-black text-[#4c9a8d] uppercase tracking-widest mb-2">
-                                Password <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                type="password"
-                                required
-                                className="w-full bg-[#f6f8f8] dark:bg-white/5 border border-[#e7f3f1] dark:border-[#1e3a36] rounded-xl py-3 px-4 text-sm font-medium focus:border-primary outline-none transition-all"
-                                value={formData.password}
-                                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                placeholder="••••••••"
-                                minLength={8}
-                            />
-                        </div>
-
-                        {/* Confirm Password */}
-                        <div>
-                            <label className="block text-[10px] font-black text-[#4c9a8d] uppercase tracking-widest mb-2">
-                                Confirm Password <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                type="password"
-                                required
-                                className="w-full bg-[#f6f8f8] dark:bg-white/5 border border-[#e7f3f1] dark:border-[#1e3a36] rounded-xl py-3 px-4 text-sm font-medium focus:border-primary outline-none transition-all"
-                                value={formData.confirmPassword}
-                                onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                                placeholder="••••••••"
-                                minLength={8}
-                            />
-                        </div>
-                    </div>
-
-                    {/* Footer */}
-                    <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#e7f3f1] dark:border-[#1e3a36]">
-                        <Button
-                            type="button"
-                            onClick={onClose}
-                            className="bg-white dark:bg-white/5 text-[#4c9a8d] border border-[#e7f3f1] dark:border-[#1e3a36] hover:border-primary px-6 h-11 text-[10px] font-black uppercase tracking-widest"
-                        >
-                            Cancel
-                        </Button>
-                        <Button
-                            type="submit"
-                            disabled={isSubmitting}
-                            icon={isSubmitting ? undefined : "person_add"}
-                            className="bg-primary hover:brightness-105 text-[#0d1b19] px-6 h-11 text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            {isSubmitting ? (
-                                <div className="flex items-center gap-2">
-                                    <div className="w-4 h-4 border-2 border-[#0d1b19] border-t-transparent rounded-full animate-spin"></div>
-                                    Creating...
+                        <div className="grid grid-cols-2 gap-8">
+                            {/* Username */}
+                            <div>
+                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">
+                                    Username <span className="text-red-500">*</span>
+                                </label>
+                                <div className="relative group">
+                                    <input
+                                        type="text"
+                                        required
+                                        className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-4 px-5 text-sm font-bold text-slate-900 placeholder:text-slate-300 focus:bg-white focus:border-[#22c55e] focus:ring-4 focus:ring-[#22c55e]/5 outline-none transition-all"
+                                        value={formData.username}
+                                        onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                                        placeholder="johndoe"
+                                    />
+                                    <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#22c55e] transition-colors">alternate_email</span>
                                 </div>
-                            ) : (
-                                'Create User'
-                            )}
-                        </Button>
+                            </div>
+
+                            {/* Full Name */}
+                            <div>
+                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">
+                                    Full Name <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    required
+                                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-4 px-5 text-sm font-bold text-slate-900 placeholder:text-slate-300 focus:bg-white focus:border-[#22c55e] focus:ring-4 focus:ring-[#22c55e]/5 outline-none transition-all"
+                                    value={formData.fullName}
+                                    onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                                    placeholder="John Doe"
+                                />
+                            </div>
+
+                            {/* Email */}
+                            <div>
+                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">
+                                    Email Address
+                                </label>
+                                <input
+                                    type="email"
+                                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-4 px-5 text-sm font-bold text-slate-900 placeholder:text-slate-300 focus:bg-white focus:border-[#22c55e] focus:ring-4 focus:ring-[#22c55e]/5 outline-none transition-all"
+                                    value={formData.email}
+                                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                    placeholder="john@example.com"
+                                />
+                            </div>
+
+                            {/* Role */}
+                            <div>
+                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">
+                                    Account Role <span className="text-red-500">*</span>
+                                </label>
+                                <select
+                                    required
+                                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-4 px-5 text-sm font-bold text-slate-900 focus:bg-white focus:border-[#22c55e] outline-none transition-all appearance-none cursor-pointer"
+                                    value={formData.role}
+                                    onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                                >
+                                    <option value="doctor">Doctor</option>
+                                    <option value="secretary">Secretary</option>
+                                    <option value="admin">Administrator</option>
+                                </select>
+                            </div>
+
+                            {/* Password */}
+                            <div>
+                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">
+                                    Security Password <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                    type="password"
+                                    required
+                                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-4 px-5 text-sm font-bold text-slate-900 placeholder:text-slate-300 focus:bg-white focus:border-[#22c55e] focus:ring-4 focus:ring-[#22c55e]/5 outline-none transition-all"
+                                    value={formData.password}
+                                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                    placeholder="••••••••"
+                                    minLength={8}
+                                />
+                            </div>
+
+                            {/* Confirm Password */}
+                            <div>
+                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">
+                                    Confirm Password <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                    type="password"
+                                    required
+                                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-4 px-5 text-sm font-bold text-slate-900 placeholder:text-slate-300 focus:bg-white focus:border-[#22c55e] focus:ring-4 focus:ring-[#22c55e]/5 outline-none transition-all"
+                                    value={formData.confirmPassword}
+                                    onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                                    placeholder="••••••••"
+                                    minLength={8}
+                                />
+                            </div>
+                        </div>
+
+                        {/* Footer Actions */}
+                        <div className="flex items-center justify-end gap-4 pt-4">
+                            <button
+                                type="button"
+                                onClick={onClose}
+                                className="px-8 h-14 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-900 hover:bg-slate-50 transition-all border border-transparent hover:border-slate-100"
+                            >
+                                Cancel
+                            </button>
+                            <Button
+                                type="submit"
+                                disabled={isSubmitting}
+                                className="bg-[#22c55e] hover:bg-[#16a34a] text-white px-10 h-14 rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-xl shadow-green-500/20 disabled:opacity-50 transition-all flex items-center gap-3"
+                            >
+                                {isSubmitting ? (
+                                    <>
+                                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                        Creating Account...
+                                    </>
+                                ) : (
+                                    <>
+                                        <span className="material-symbols-outlined text-lg">person_add</span>
+                                        Create User Account
+                                    </>
+                                )}
+                            </Button>
+                        </div>
                     </div>
                 </form>
             </div>

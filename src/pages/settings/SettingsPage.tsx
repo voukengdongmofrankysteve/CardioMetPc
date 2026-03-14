@@ -39,13 +39,13 @@ export const SettingsPage: React.FC = () => {
     };
 
     return (
-        <div className="flex flex-col min-h-screen bg-[#f6f8f8] dark:bg-[#10221f] font-sans text-[#0d1b19] dark:text-white overflow-y-auto no-scrollbar pb-12">
+        <div className="flex flex-col min-h-screen bg-white font-sans text-slate-900 overflow-y-auto no-scrollbar pb-12">
             <main className="max-w-[1200px] mx-auto w-full p-8 px-12">
                 {/* Breadcrumbs */}
-                <div className="flex items-center gap-2 text-[10px] font-black text-[#4c9a8d] uppercase tracking-[0.2em] mb-4">
+                <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-4">
                     <span>Settings</span>
                     <span className="opacity-30">/</span>
-                    <span className="text-[#0d1b19] dark:text-white underline decoration-primary decoration-2 underline-offset-4">
+                    <span className="text-slate-900 underline decoration-[#22c55e] decoration-2 underline-offset-4">
                         {getTabTitle()}
                     </span>
                 </div>
@@ -53,39 +53,39 @@ export const SettingsPage: React.FC = () => {
                 {/* Header */}
                 <div className="flex justify-between items-end mb-10">
                     <div className="max-w-2xl">
-                        <h1 className="text-4xl font-black text-[#0d1b19] dark:text-white tracking-tighter mb-3">
+                        <h1 className="text-4xl font-black text-slate-900 tracking-tighter mb-3">
                             {getTabTitle()}
                         </h1>
-                        <p className="text-sm text-[#4c9a8d] font-medium leading-relaxed">
+                        <p className="text-sm text-slate-500 font-medium leading-relaxed">
                             {getTabDescription()}
                         </p>
                     </div>
                     {activeTab === 'roles' ? (
-                        <Button icon="add" className="bg-primary/10 text-primary border border-primary/20 hover:bg-primary hover:text-[#0d1b19] transition-all px-6 h-12 text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/5">
+                        <Button icon="add" className="bg-[#22c55e]/10 text-[#22c55e] border border-[#22c55e]/20 hover:bg-[#22c55e] hover:text-white transition-all px-6 h-12 text-[10px] font-black uppercase tracking-widest">
                             Create New Role
                         </Button>
                     ) : activeTab === 'backups' ? (
-                        <Button icon="cloud_upload" className="bg-primary hover:brightness-105 text-[#0d1b19] px-6 h-12 text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/20">
+                        <Button icon="cloud_upload" className="bg-[#22c55e] hover:bg-[#16a34a] text-white px-6 h-12 text-[10px] font-black uppercase tracking-widest shadow-lg shadow-green-500/20">
                             Create Manual Backup
                         </Button>
                     ) : null}
                 </div>
 
                 {/* Tabs */}
-                <div className="flex border-b border-[#e7f3f1] dark:border-[#1e3a36] gap-10 mb-8">
+                <div className="flex border-b border-slate-100 gap-10 mb-8">
                     {tabs.map((tab) => (
                         <button
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id as SettingsTab)}
-                            className={`pb-4 px-1 text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all relative ${activeTab === tab.id
-                                ? 'text-[#0d1b19] dark:text-white'
-                                : 'text-[#4c9a8d] hover:text-[#0d1b19] dark:hover:text-white'
+                            className={`pb-4 px-1 text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 transition-all relative ${activeTab === tab.id
+                                ? 'text-slate-900'
+                                : 'text-slate-400 hover:text-slate-900'
                                 }`}
                         >
                             <span className="material-symbols-outlined text-lg">{tab.icon}</span>
                             {tab.label}
                             {activeTab === tab.id && (
-                                <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-t-full shadow-[0_-2px_8px_rgba(66,240,211,0.5)]"></div>
+                                <div className="absolute bottom-0 left-0 right-0 h-1 bg-[#22c55e] rounded-t-full"></div>
                             )}
                         </button>
                     ))}

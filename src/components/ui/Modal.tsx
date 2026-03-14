@@ -45,7 +45,7 @@ export const Modal: React.FC<ModalProps> = ({
     };
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-white">
             {/* Backdrop */}
             <div
                 className="absolute inset-0 bg-[#0d1b19]/60 backdrop-blur-sm animate-in fade-in duration-300"
@@ -55,14 +55,14 @@ export const Modal: React.FC<ModalProps> = ({
             {/* Modal Content */}
             <div
                 ref={modalRef}
-                className={`w-full ${sizeClasses[size]} bg-white dark:bg-[#152a26] rounded-3xl shadow-2xl border border-[#e7f3f1] dark:border-[#1e3a36] overflow-hidden flex flex-col relative animate-in zoom-in-95 fade-in duration-300`}
+                className={`w-full ${sizeClasses[size]} bg-white rounded-3xl shadow-2xl border border-border overflow-hidden flex flex-col relative animate-in zoom-in-95 fade-in duration-300`}
             >
                 {/* Header */}
-                <div className="px-8 py-6 border-b border-[#f6f8f8] dark:border-white/5 flex items-center justify-between">
-                    <h3 className="text-xl font-black text-[#0d1b19] dark:text-white uppercase tracking-tight">{title}</h3>
+                <div className="px-8 py-6 border-b border-border flex items-center justify-between bg-white">
+                    <h3 className="text-xl font-black text-text-main uppercase tracking-tight">{title}</h3>
                     <button
                         onClick={onClose}
-                        className="size-10 rounded-xl bg-[#f6f8f8] dark:bg-white/5 flex items-center justify-center text-[#4c9a8d] hover:text-[#0d1b19] dark:hover:text-white transition-all"
+                        className="size-10 rounded-xl bg-bg-sidebar flex items-center justify-center text-text-muted hover:text-primary transition-all"
                     >
                         <span className="material-symbols-outlined">close</span>
                     </button>
@@ -75,7 +75,7 @@ export const Modal: React.FC<ModalProps> = ({
 
                 {/* Footer */}
                 {footer && (
-                    <div className="px-8 py-6 border-t border-[#f6f8f8] dark:border-white/5 bg-[#f8fcfb] dark:bg-white/5 flex justify-end gap-3">
+                    <div className="px-8 py-6 border-t border-border bg-bg-sidebar flex justify-end gap-3">
                         {footer}
                     </div>
                 )}
