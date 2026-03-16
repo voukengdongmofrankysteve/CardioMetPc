@@ -19,8 +19,11 @@ export const PatientPrescriptionsPage: React.FC = () => {
     const navigate = useNavigate();
     const { id: patientId } = useParams<{ id: string }>();
     const location = useLocation();
+
     const [patientInfo, setPatientInfo] = useState<any>(location.state?.patient || null);
+
     const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
+
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
@@ -35,16 +38,22 @@ export const PatientPrescriptionsPage: React.FC = () => {
                 }
 
                 const rawData = await prescriptionService.getPrescriptions(dbId);
+
+                console.log("rawDatarawDatarawDatarawDatarawData");
+                console.log(rawData);
+
                 const flattened: Prescription[] = [];
-                rawData?.data?.forEach((header: any) => {
-                    header.items?.forEach((item: any) => {
-                        flattened.push({
-                            ...item,
-                            created_at: header.created_at,
-                            consultation_id: header.consultation_id
+                if (Array.isArray(rawData)) {
+                    rawData.forEach((header: any) => {
+                        header.items?.forEach((item: any) => {
+                            flattened.push({
+                                ...item,
+                                created_at: header.created_at,
+                                consultation_id: header.consultation_id
+                            });
                         });
                     });
-                });
+                }
                 setPrescriptions(flattened);
             } catch (error) {
                 console.error('Failed to load patient prescriptions:', error);

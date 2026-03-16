@@ -9,8 +9,8 @@ interface LoginPageProps {
 }
 
 export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
-    const [email, setEmail] = useState('test@example.com');
-    const [password, setPassword] = useState('password');
+    const [email, setEmail] = useState('admin@cardiomed.com');
+    const [password, setPassword] = useState('admin123');
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
